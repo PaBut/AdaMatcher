@@ -214,6 +214,20 @@ class AdaMatcherLoss(nn.Module):
         matrix = (torch.einsum('nqc,nsc->nqs', mid_feat0 / c**0.5,
                                mid_feat1 / c**0.5) * 10).softmax(dim=1)
         return self.mask_focal_loss(matrix, gt_matrix, weights)
+    
+    def compute_coarse_zeroshot_loss(self, conf):
+        """
+        Args:
+            conf: [(n', n'), (m', m'), ...]
+
+        Returns:
+        """
+        # conf = torch.clamp(conf, 1e-6, 1-1e-6)
+        conf = [mat.diag().clamp(min=1e-6, max=1-1e-6) for mat in conf]
+        loss_pos = [(- self.focal_loss_alpha * torch.pow(1 - x, self.focal_loss_gamma) * x.log()).mean() for x in conf]
+        loss_pos = sum(loss_pos) / len(loss_pos)
+
+        return loss_pos
 
     def forward(self, data):
         # pdb.set_trace()
@@ -313,14 +327,15 @@ class AdaMatcherLoss(nn.Module):
             coarse_loss = None
 
         # fine level
-        spv_w_pt0_i_l2, spv_pt0_i_l2 = (
-            data['spv_w_pt0_i_l1'] / s1_l2.unsqueeze(1),
-            (data['spv_pt0_i_l1'] / s0_l2.unsqueeze(1)).round(),
-        )
-        spv_w_pt1_i_l2, spv_pt1_i_l2 = (
-            data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1),
-            (data['spv_pt1_i_l1'] / s1_l2.unsqueeze(1)).round(),
-        )
+        if data["gt"].sum() > 0:
+            spv_w_pt0_i_l2, spv_pt0_i_l2 = (
+                data['spv_w_pt0_i_l1'] / s1_l2.unsqueeze(1),
+                (data['spv_pt0_i_l1'] / s0_l2.unsqueeze(1)).round(),
+            )
+            spv_w_pt1_i_l2, spv_pt1_i_l2 = (
+                data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1),
+                (data['spv_pt1_i_l1'] / s1_l2.unsqueeze(1)).round(),
+            )
 
         b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
             data['b_ids0_l2'],
@@ -342,10 +357,13 @@ class AdaMatcherLoss(nn.Module):
             std1 = data['std1'][p_mask0]
             w_pt0 = data['kpts1from0_l2'][p_mask0]  # * s1_l2
             r_w_pt0 = data['relative_kpts1from0_l2'][p_mask0]
-            patch1_center_coord = data['patch1_center_coord_l2'][p_mask0]
-            gt_w_pt0_l2 = spv_w_pt0_i_l2[b_ids0_l1, j_ids0_l1]
-            gt_r_w_pt0_l2 = (gt_w_pt0_l2 -
-                             patch1_center_coord) / (self.window_size // 2)
+            if data["gt"].sum() > 0:
+                patch1_center_coord = data['patch1_center_coord_l2'][p_mask0]
+                gt_w_pt0_l2 = spv_w_pt0_i_l2[b_ids0_l1, j_ids0_l1]
+                gt_r_w_pt0_l2 = (gt_w_pt0_l2 -
+                                patch1_center_coord) / (self.window_size // 2)
+            else:
+                gt_r_w_pt0_l2 = data["expec_f_zs"]
 
             F_0to1 = pose2fundamental(data['K0'], data['K1'], data['T_0to1'])
             fine_loss0 = self._compute_fine_loss_l2(

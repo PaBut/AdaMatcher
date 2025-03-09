@@ -1,6 +1,7 @@
 import pdb
 
 import torch
+import torch.nn.functional as F
 from kornia.geometry.epipolar import essential, fundamental, numeric
 
 
@@ -31,6 +32,24 @@ def pose2essential_fundamental(K0, K1, T_0to1):
     E_mat = Tx @ T_0to1[:, :3, :3]
     F_mat = torch.inverse(K1).transpose(1, 2) @ E_mat @ torch.inverse(K0)
     return E_mat, F_mat
+
+
+@torch.no_grad()
+def morphological_closing(mask):
+    """
+    Performs dilation followed by erosion (closing) on a binary mask.
+    """
+    mask = mask.float().unsqueeze(0).unsqueeze(0)
+
+    kernel = torch.ones((1, 1, 3, 3), dtype=torch.float, device=mask.device)
+
+    # Dilation: Expands valid regions
+    dilated = F.conv2d(mask, kernel, padding=1) > 0  # Threshold to keep binary values
+
+    # Erosion: Shrinks valid regions
+    eroded = F.conv2d(dilated.float(), kernel, padding=1) == 9
+
+    return eroded.squeeze().float()
 
 
 @torch.no_grad()

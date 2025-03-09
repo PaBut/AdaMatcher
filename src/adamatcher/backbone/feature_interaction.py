@@ -12,6 +12,7 @@ from src.adamatcher.ada_module.transformer import (
     EncoderLayer,
     TransformerDecoder,
 )
+from src.adamatcher.utils.geometry import morphological_closing
 
 
 def make_head_layer(cnv_dim, curr_dim, out_dim, head_name=None):
@@ -137,11 +138,13 @@ class FICAS(nn.Module):
     config.nhead = 8
     config.attention = "linear"
 
-    def __init__(self, layer_num=4, d_model=256):
+    def __init__(self, resolution, layer_num=4, d_model=256):
         super(FICAS, self).__init__()
         self.d_model = d_model
         self.num_query = 1
         self.cas_module = SegmentationModule(d_model, self.num_query)
+
+        self.scale_l0, self.scale_l1, self.scale_l2 = resolution
 
         encoder_layer = EncoderLayer(
             d_model=self.d_model,
@@ -304,8 +307,66 @@ class FICAS(nn.Module):
             cas_score0 = self.cas_module(x0_mid, hs0, x0_mask)
             cas_score1 = self.cas_module(x1_mid, hs1, x1_mask)
         return cas_score0, cas_score1
+    
+    def covisible_segment_zeroshot(self, data):
+        h, w = data["hw0_i"]
 
-    def forward(self, x0, x1, x0_mask=None, x1_mask=None, use_cas=True):
+        pseudo_labels = data["pseudo_labels"]
+
+        matches_t = torch.from_numpy(pseudo_labels)
+
+        spv_class_l1_gt0 = self.compute_covisible_segment_zeroshot(
+            matches_t, h, w
+        )
+        spv_class_l1_gt1 = self.compute_covisible_segment_zeroshot(
+            matches_t[:, [2, 3, 0, 1]], h, w
+        )
+
+        data.update(
+            {
+                "spv_class_l1_gt0": spv_class_l1_gt0,
+                "spv_class_l1_gt1": spv_class_l1_gt1,
+            }
+        )
+    
+
+    def compute_covisible_segment_zeroshot(self, pseudo_labels, h, w):
+        h_l2, w_l2 = h // self.scale_l2, w // self.scale_l2
+
+        matches_t = torch.from_numpy(pseudo_labels)
+
+        x0, y0, x1, y1 = matches_t[:, 0], matches_t[:, 1], matches_t[:, 2], matches_t[:, 3]
+        grid_x0_l2 = (x0 / self.scale_l2).round().long().clamp(0, w_l2 - 1)
+        grid_y0_l2 = (y0 / self.scale_l2).round().long().clamp(0, h_l2 - 1)
+        grid_indices_l2 = grid_x0_l2 + grid_y0_l2 * w_l2
+
+        valid_mask0_l2 = torch.zeros(h_l2 * w_l2, device=torch.device("cuda"), dtype=torch.bool)
+        valid_matches = (x1 >= 0) & (x1 < w) & (y1 >= 0) & (y1 < h)
+
+        # for b in range(B):
+            # batch_mask = (b_ids == b) & valid_matches
+        valid_mask0_l2[grid_indices_l2[valid_matches]] = 1
+
+        # Aggregate to coarser resolution (l1)
+        h0_l1, w0_l1 = h // self.scale_l1, w // self.scale_l1
+        print(h0_l1, w0_l1)
+        valid_mask0_l2 = valid_mask0_l2.reshape(h_l2, w_l2)
+        valid_mask0_l1 = (
+            rearrange(
+                valid_mask0_l2, "(s_h h) (s_w w) -> s_h s_w (h w)", s_h=h0_l1, s_w=w0_l1
+            ).sum(dim=-1)
+            > 0
+        )
+
+        spv_class_l1_gt0 = valid_mask0_l1.float()
+
+        spv_class_l1_gt0 = morphological_closing(spv_class_l1_gt0)
+
+        return spv_class_l1_gt0
+
+    def forward(self, x0, x1, data, x0_mask=None, x1_mask=None, use_cas=True):
+        if self.training and data["zs"].sum() > 0:
+            self.covisible_segment_zeroshot(data)
         h0, w0 = x0.shape[2:]
         h1, w1 = x1.shape[2:]
         bs = x0.shape[0]

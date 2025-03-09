@@ -168,6 +168,9 @@ class ScanNetDataset(utils.data.Dataset):
                 osp.join(scene_name, 'color', f'{stem_name_0}.jpg'),
                 osp.join(scene_name, 'color', f'{stem_name_1}.jpg'),
             ),
+
+            'gt': True,
+            'zs': False,
         }
 
         if mask0 is not None:

@@ -29,7 +29,7 @@ class AdaMatcher(nn.Module):
             config["coarse"]["d_model"], max_shape=(512, 512)
         )
         self.backbone = build_backbone(config)
-        self.feature_interaction = FICAS()
+        self.feature_interaction = FICAS(config["resolution"])
 
         self.coarse_module = CoarseModule(config["match_coarse"], config["resolution"])
         self.fine_module = FineModule(config["resolution"])
@@ -76,6 +76,10 @@ class AdaMatcher(nn.Module):
                 "hw1_d8": feat_d8_1.shape[2:],
                 "hw0_d2": feat_d2_0.shape[2:],
                 "hw1_d2": feat_d2_1.shape[2:],
+                'hw0_c': feat_d8_0.shape[2:], 
+                'hw1_c': feat_d8_1.shape[2:],
+                'hw0_f': feat_d2_0.shape[2:],
+                'hw1_f': feat_d2_1.shape[2:]
             }
         )
 
@@ -85,6 +89,7 @@ class AdaMatcher(nn.Module):
         mask_feat0, mask_feat1, cas_score0, cas_score1 = self.feature_interaction(
             feat_c0,
             feat_c1,
+            data,
             data.get("mask0_d8", None),
             data.get("mask1_d8", None),
             use_cas=self.use_cas or self.training,

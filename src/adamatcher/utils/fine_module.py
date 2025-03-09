@@ -1,3 +1,4 @@
+from functools import partial
 import math
 import os
 
@@ -62,7 +63,8 @@ class FineModule(nn.Module):
                           kptsfeat0_from1,
                           patch0_center_coord_l2,
                           scale,
-                          flag=False):
+                          flag=False,
+                          heatmap_zs=None):
         """
         kptsfeat1:       [k, ww, c]
         kptsfeat0_from1: [k, ww, c]
@@ -100,6 +102,9 @@ class FineModule(nn.Module):
         softmax_temp = 1.0  # 1. / C ** .5
         heatmap = torch.softmax(softmax_temp * heatmap, dim=1).view(-1, nW, nW)
 
+        if heatmap_zs is not None:
+            heatmap = torch.cat([heatmap, heatmap_zs], dim=0)
+
         # compute coordinates from heatmap
         relative_kpts0from1 = dsnt.spatial_expectation2d(heatmap[None],
                                                          True)[0]  # [M, 2]
@@ -117,6 +122,32 @@ class FineModule(nn.Module):
                         -1)  # [M]  clamp needed for numerical stability
 
         return relative_kpts0from1, kpts0_from1_l2, std
+    
+    def compute_zeroshot_fine_loss(self, feat_f0, feat_f1, radius, W, data):
+        M, WW, C = feat_f0.shape
+        Nz = len(data['zs_b_ids']) if 'zs_b_ids' in data else 0
+        pt0_f_int = data['zs_pt0_f_int']
+        pt0_f_float = data['zs_pt0_f_float']  # (Nz, 2) in hw_f coordinates
+        pt_x = (pt0_f_float[:, 0] - pt0_f_int[:, 0]) / radius
+        pt_y = (pt0_f_float[:, 1] - pt0_f_int[:, 1]) / radius
+        grid = torch.stack([pt_x, pt_y], dim=1)[:, None, None]  # (Nz, 1, 1, 2)
+        grid_sample = partial(F.grid_sample, align_corners=True, mode='bilinear')
+        feat_f0_picked = rearrange(feat_f0[-Nz:], 'n (h w) c -> n c h w', h=W, w=W)
+        feat_f0_picked = grid_sample(feat_f0_picked, grid).squeeze()  # [(Nz, c)]
+        sim_matrix = torch.einsum('mc,mrc->mr', feat_f0_picked, feat_f1[-Nz:])  # (Nz, ww)
+        softmax_temp = 1. / C ** .5
+        heatmap_z = torch.softmax(softmax_temp * sim_matrix, dim=1).view(-1, W, W)  # (Nz, w, w)
+
+        self.spvc_zeroshot_fine(radius, data)
+
+        return heatmap_z
+
+    @torch.no_grad()
+    def spvc_zeroshot_fine(self, radius, data):
+        pt1_f_int = data['zs_pt1_f_int']
+        pt1_f_float = data['zs_pt1_f_float']
+        expec_f_zs = (pt1_f_float - pt1_f_int) / radius
+        data.update({"expec_f_zs": expec_f_zs})
 
     def forward(
         self,
@@ -140,10 +171,10 @@ class FineModule(nn.Module):
             stride=patch_size_l1l2,
             padding=self.W // 2,
         ).contiguous()
-        feat_map1_unfold = rearrange(feat_map1_unfold,
+        feat_map1_unfold_pre = rearrange(feat_map1_unfold,
                                      'n (c ww) l -> n l ww c',
                                      ww=self.W**2).contiguous()
-        feat_map1_unfold = rearrange(feat_map1_unfold,
+        feat_map1_unfold = rearrange(feat_map1_unfold_pre,
                                      'n l (w1 w2) c -> n l w1 w2 c',
                                      w1=self.W,
                                      w2=self.W).contiguous()
@@ -154,13 +185,47 @@ class FineModule(nn.Module):
             stride=patch_size_l1l2,
             padding=self.W // 2,
         ).contiguous()
-        feat_map0_unfold = rearrange(feat_map0_unfold,
+        feat_map0_unfold_pre = rearrange(feat_map0_unfold,
                                      'n (c ww) l -> n l ww c',
                                      ww=self.W**2).contiguous()
-        feat_map0_unfold = rearrange(feat_map0_unfold,
+        feat_map0_unfold = rearrange(feat_map0_unfold_pre,
                                      'n l (w1 w2) c -> n l w1 w2 c',
                                      w1=self.W,
                                      w2=self.W).contiguous()
+        
+
+
+        if data['zs'].sum():
+            W = self.W
+            radius = W // 2
+            zs = data['zs']
+            pt0_i = data['zs_pt0_i']
+            pt1_i = data['zs_pt1_i']
+            zs_b_ids = data['zs_b_ids']
+            scale_c = data['hw0_i'][0] / data['hw0_c'][0]  # 8.0
+            scale_f = data['hw0_i'][0] / data['hw0_f'][0]  # 2.0
+            pt0_c_int = (pt0_i / scale_c).round().long()
+            pt1_c_int = (pt1_i / scale_c).round().long()
+            pt0_f_int = pt0_c_int * patch_size_l1l2 # stride
+            pt1_f_int = pt1_c_int * patch_size_l1l2 # stride
+            pt0_f_float = pt0_i / scale_f
+            pt1_f_float = pt1_i / scale_f
+            indices = ((pt0_f_float[:, 0] - pt0_f_int[:, 0]).abs() <= radius) & \
+                      ((pt0_f_float[:, 1] - pt0_f_int[:, 1]).abs() <= radius) & \
+                      ((pt1_f_float[:, 0] - pt1_f_int[:, 0]).abs() <= radius) & \
+                      ((pt1_f_float[:, 1] - pt1_f_int[:, 1]).abs() <= radius)
+            zs_ci_ids = pt0_c_int[:, 0] + pt0_c_int[:, 1] * data['hw0_c'][1]
+            zs_cj_ids = pt1_c_int[:, 0] + pt1_c_int[:, 1] * data['hw1_c'][1]
+            feat_f0_z = feat_map0_unfold_pre[zs][zs_b_ids[indices], zs_ci_ids[indices]]  # [n, ww, cf]
+            feat_f1_z = feat_map1_unfold_pre[zs][zs_b_ids[indices], zs_cj_ids[indices]]  #TODO: leverage
+
+            data.update({
+                'zs_b_ids': zs_b_ids[indices],
+                'zs_pt0_f_int': pt0_f_int[indices],
+                'zs_pt1_f_int': pt1_f_int[indices],
+                'zs_pt0_f_float': pt0_f_float[indices],
+                'zs_pt1_f_float': pt1_f_float[indices],
+            })
 
         hw1_d2, hw0_d2 = data['hw1_d2'], data['hw0_d2']
         overlap_scores0 = data['overlap_scores0']
@@ -221,6 +286,8 @@ class FineModule(nn.Module):
                             ],
                             dim=0,
                         ))  # [2n, 2c->c]
+                    if data["zs"].sum() > 0:
+                        bs_feat_c = torch.cat([bs_feat_c, feat_f0_z[bs_id, ...], feat_f1_z[bs_id, ...],], dim=0)
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
                             [
@@ -237,6 +304,11 @@ class FineModule(nn.Module):
                     ###########################################################################
                     bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
                         bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)
+                    
+
+                    heatmap_zs = None
+                    if data["zs"].sum() > 0:
+                        heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat0_from1, bs_kptsfeat1, radius, W, data)
 
                     (
                         bs_relative_kpts0from1_l2,
@@ -248,6 +320,7 @@ class FineModule(nn.Module):
                         bs_patch0_center_coord_l2,
                         o_scale0,
                         flag=self.post_scale,
+                        heatmap_zs=heatmap_zs
                     )
 
                     bs_i_ids1_l2 = (
@@ -288,9 +361,11 @@ class FineModule(nn.Module):
 
                     bs_feat_c = self.down_proj(
                         torch.cat([
-                            feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
+                            feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],      # TODO: Leverage zeroshot supervision
                             feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
                         ]))
+                    if data["zs"].sum() > 0:
+                        bs_feat_c = torch.cat([bs_feat_c, feat_f0_z[bs_id, ...], feat_f1_z[bs_id, ...],], dim=0)
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
                             [
@@ -307,6 +382,10 @@ class FineModule(nn.Module):
                     ######################################################################################
                     bs_kptsfeat0, bs_kptsfeat1_from0 = self.attention(
                         bs_kptsfeat0, bs_kptsfeat1_from0, flag=1)
+                    
+                    heatmap_zs = None
+                    if data["zs"].sum() > 0:
+                        heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat0_from1, bs_kptsfeat1, radius, W, data)
 
                     (
                         bs_relative_kpts1from0_l2,
@@ -318,6 +397,7 @@ class FineModule(nn.Module):
                         bs_patch1_center_coord_l2,
                         o_scale1,
                         flag=self.post_scale,
+                        heatmap_zs=heatmap_zs
                     )
 
                     bs_i_ids0_l2 = (

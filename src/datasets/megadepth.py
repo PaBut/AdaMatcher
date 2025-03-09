@@ -163,6 +163,8 @@ class MegaDepthDataset(Dataset):
                 self.scene_info['image_paths'][idx0],
                 self.scene_info['image_paths'][idx1],
             ),
+            'gt': True,
+            'zs': False,
         }
 
         if mask0 is not None:

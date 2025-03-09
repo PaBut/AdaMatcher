@@ -4,7 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops.einops import rearrange
+from functools import partial
 
+INF = 1e9
 
 def compute_max_candidates(p_m0, p_m1):
     """Compute the max candidates of all pairs within a batch
@@ -15,6 +17,87 @@ def compute_max_candidates(p_m0, p_m1):
     h1s, w1s = p_m1.sum(1).max(-1)[0], p_m1.sum(-1).max(-1)[0]
     max_cand = torch.sum(torch.min(torch.stack([h0s * w0s, h1s * w1s], -1), -1)[0])
     return max_cand
+
+def zeroshot_coarse_matching(feat_0, feat_1, data, mask_c0=None, mask_c1=None, temperature=None, sample_num=None):
+    feat_c0, feat_c1 = feat_0, feat_1
+
+    zs = data['zs']
+    znum = zs.sum()
+    pseudo_labels = data['pseudo_labels'][zs]
+    b_ids, n_ids = torch.where(pseudo_labels.sum(dim=2) > 0)
+    pseudo_labels = pseudo_labels[b_ids, n_ids]  # (n, 4)
+    pt0 = pseudo_labels[:, :2]  # (n, 2), in hw_i(image) size coordinates
+    pt1 = pseudo_labels[:, 2:]  # (n, 2), in hw_i(image) size coordinates
+
+    unique_b = torch.unique(b_ids)
+    if (sample_num > 0) and len(b_ids) > (sample_num * len(unique_b)):
+        indices = torch.cat([
+            torch.randperm((b_ids == b).sum(), device=feat_c0.device)[:sample_num]
+            + (b_ids < b).sum()
+            for b in unique_b])
+        b_ids, pt0, pt1 = b_ids[indices], pt0[indices], pt1[indices]
+
+    grid_sample = partial(F.grid_sample, align_corners=True, mode='bilinear')
+    scale = data['hw0_i'][0] / data['hw0_c'][0]
+
+    # sample coarse-level descriptors
+    grid0 = pt_to_grid(pt0.clone()[None]/scale, data['hw0_c'])  # (1, 1, n, 2)
+    feat_c0 = [grid_sample(feat_c0[[i]], grid0[:, :, b_ids == i]) for i in range(znum)]  # [(1, 256, 1, n)]
+    feat_c0 = torch.cat([x.squeeze().transpose(0, 1) for x in feat_c0], dim=0)  # (n, 256)
+
+    # sample coarse-level descriptors
+    grid1 = pt_to_grid(pt1.clone()[None]/scale, data['hw1_c'])  # (1, 1, n, 2)
+    feat_c1 = [grid_sample(feat_c1[[i]], grid1[:, :, b_ids == i]) for i in range(znum)]  # [(1, 256, 1, n)]
+    feat_c1 = torch.cat([x.squeeze().transpose(0, 1) for x in feat_c1], dim=0)  # (n, 256)
+
+    # normalize
+    feat0, feat1 = map(lambda feat: feat / feat.shape[-1] ** .5, [feat_c0, feat_c1])
+    feat_0, feat_1 = map(lambda feat: feat / feat.shape[-1] ** .5, [feat_0, feat_1])
+
+    # dual softmax
+    b_num = [(b_ids==i).sum().item() for i in range(znum)]
+    sim_matrix = [torch.einsum(
+        "lc,sc->ls",
+        torch.cat((feat0[b_ids==i], feat_0[i]), dim=0),
+        torch.cat((feat1[b_ids==i], feat_1[i]), dim=0)
+    ) / temperature for i in range(znum)]
+    sim_matrix = [
+        mat.masked_fill_(~(
+                torch.cat((m0.new_ones(n).bool(), m0))[:, None] *
+                torch.cat((m1.new_ones(n).bool(), m1))[None]
+        ).bool(), -INF) for mat, m0, m1, n in zip(sim_matrix, mask_c0, mask_c1, b_num)
+    ]
+    conf_matrix = [F.softmax(mat, 0) * F.softmax(mat, 1) for mat in sim_matrix]
+    conf_matrix = [mat[:n, :n] for mat, n in zip(conf_matrix, b_num)]
+
+    data.update({
+        'zs_pt0_i': pt0,  # (n, 2)
+        'zs_pt1_i': pt1,  # (n, 2)
+        'zs_b_ids': b_ids,  # (n,)
+        'zs_feat_c0': feat_c0,  # (n, 256)
+        'zs_feat_c1': feat_c1,  # (n, 256)
+        'zs_conf_matrix': conf_matrix,  # [(n', n'), (m', m'), ...]
+    })
+
+def pt_to_grid(pt, hw):
+    """
+    Args:
+        pt: (b, n, 2) - (x, y)
+        hw: (2) - (h, w) - the kpts working size coordinates
+
+    Returns: grid pt: (b, 1, n, 2) - (x, y) in [-1, 1]
+    """
+    # make pts to [0, 2]
+    pt[:, :, 0] *= 2 / (hw[1] - 1)
+    pt[:, :, 1] *= 2 / (hw[0] - 1)
+    # make pts from [0, 2] to [-1, 1]
+    pt -= 1
+    # make sure all pts in [-1, 1]
+    assert (pt >= -1).all() and (pt <= 1).all()
+    # make pts shape from (b, n, 2) to (b, 1, n, 2)
+    pt = pt[:, None]
+
+    return pt
 
 
 class CoarseModule(nn.Module):
@@ -390,6 +473,9 @@ class CoarseModule(nn.Module):
         self.bs = bs
         mask0_d8, mask1_d8 = data.get("mask0_d8", None), data.get("mask1_d8", None)
 
+        if self.training and data["zs"].sum() > 1:
+            zeroshot_coarse_matching(mask_feat0, mask_feat1, data, mask0_d8, mask1_d8, temperature=10, sample_num=1000)
+
         ######## 1. Get Overlapped Patch Index ##########################################
         (
             index_dict,
@@ -498,7 +584,7 @@ class CoarseModule(nn.Module):
                     o_scale0 = self.max_o_scale
                 scales.append(o_scale0)
 
-                if self.training:
+                if self.training and data["gt"].sum() > 0:
                     gt1 = (
                         data["spv_i_ids1_l0"][data["spv_b_ids1_l1"] == bs_id],
                         data["spv_i_ids1_l0l1"][data["spv_b_ids1_l1"] == bs_id],
@@ -545,7 +631,7 @@ class CoarseModule(nn.Module):
                     o_scale1 = self.max_o_scale
                 scales.append(o_scale1)
 
-                if self.training:
+                if self.training and data["gt"].sum() > 0:
                     gt0 = (
                         data["spv_j_ids0_l0"][data["spv_b_ids0_l1"] == bs_id],
                         data["spv_j_ids0_l0l1"][data["spv_b_ids0_l1"] == bs_id],
