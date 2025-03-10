@@ -89,6 +89,10 @@ _CN.ADAMATCHER.LOSS.FINE_CORRECT_THR = 1.0  # for filtering valid fine-level gts
 
 ##############  Dataset  ##############
 _CN.DATASET = CN()
+_CN.DATASET.TRAIN = CN()
+_CN.DATASET.VALID = CN()
+_CN.DATASET.TESTS = CN()
+
 # 1. data config
 # training and validating
 _CN.DATASET.TRAINVAL_DATA_SOURCE = None  # options: ['ScanNet', 'MegaDepth']
