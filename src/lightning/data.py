@@ -279,14 +279,13 @@ class MultiSceneDataModule(pl.LightningDataModule):
                         data_root,
                         npz_path,
                         npz_name,
-                        mode=mode,
-                        df=self.mgdpt_df,
-                        padding=self.mgdpt_img_pad,
-                        max_resize=max_resize,
-                        max_samples=max_samples,
-                        augment_fn=augment_fn,
-                        pose_dir=pose_dir,
-                        kwargs=dcfg
+                        mode,
+                        max_resize,
+                        self.mgdpt_df,
+                        self.mgdpt_img_pad,
+                        augment_fn,
+                        max_samples,
+                        **dcfg
                     ))
             else:
                 raise NotImplementedError()
@@ -356,14 +355,14 @@ class MultiSceneDataModule(pl.LightningDataModule):
                     WALKDataset,
                     data_root,
                     npz_dir,
-                    seq_name=x,
-                    mode=mode,
-                    max_resize=max_resize,
-                    df=self.mgdpt_df,
-                    padding=self.mgdpt_img_pad,
-                    augment_fn=augment_fn,
-                    max_samples=max_samples,
-                    kwargs=dcfg
+                    x,
+                    mode,
+                    max_resize,
+                    self.mgdpt_df,
+                    self.mgdpt_img_pad,
+                    augment_fn,
+                    max_samples,
+                    **dcfg
                 ))(seqname) for seqname in npz_names)
             else:
                 raise ValueError(f'Unknown dataset: {data_source}')
