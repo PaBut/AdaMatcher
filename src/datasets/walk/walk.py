@@ -16,9 +16,9 @@ from datetime import datetime
 from os.path import join, isdir, exists
 from torch.utils.data import Dataset
 
-from datasets.utils import read_images
 from datasets.walk.utils import covision, intersected
 from src.adamatcher.utils.coarse_module import pt_to_grid
+from src.datasets.utils import read_images
 
 
 parse_mtd = lambda name: name.parent.stem.split()[1]
