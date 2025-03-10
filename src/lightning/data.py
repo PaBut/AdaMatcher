@@ -198,7 +198,9 @@ class MultiSceneDataModule(pl.LightningDataModule):
         logger.info(
             f'[rank {self.rank}]: {len(local_npz_names)} scene(s) assigned.')
 
-        dataset_builder = self._build_concat_dataset_parallel
+        dataset_builder = (self._build_concat_dataset_parallel
+                           if self.parallel_load_data else
+                           self._build_concat_dataset)
 
         return dataset_builder(
             data_root,
@@ -210,77 +212,77 @@ class MultiSceneDataModule(pl.LightningDataModule):
             max_resize=self.max_resize,
             max_samples=self.max_samples,
             pose_dir=pose_dir,
-            scene_list_path=scene_list_path,
         )
 
-    # def _build_concat_dataset(
-    #     self,
-    #     data_root,
-    #     npz_names,
-    #     npz_dir,
-    #     intrinsic_path,
-    #     mode,
-    #     max_resize,
-    #     max_samples,
-    #     min_overlap_score=0.0,
-    #     pose_dir=None,
-    #     scene_list_path=None
-    # ):
-    #     datasets = []
-    #     augment_fn = self.augment_fn if mode == 'train' else None
-    #     data_source = (self.trainval_data_source
-    #                    if mode in ['train', 'val'] else self.test_data_source)
-    #     if str(data_source).lower() == 'megadepth':
-    #         npz_names = [f'{n}.npz' for n in npz_names]
-    #     for npz_name in tqdm(
-    #             npz_names,
-    #             desc=f'[rank:{self.rank}] loading {mode} datasets',
-    #             disable=int(self.rank) != 0,
-    #     ):
-    #         # `ScanNetDataset`/`MegaDepthDataset` load all data from npz_path when initialized, which might take time.
-    #         npz_path = osp.join(npz_dir, npz_name)
-    #         if data_source == 'ScanNet':
-    #             datasets.append(
-    #                 ScanNetDataset(
-    #                     data_root,
-    #                     npz_path,
-    #                     intrinsic_path,
-    #                     mode=mode,
-    #                     min_overlap_score=min_overlap_score,
-    #                     augment_fn=augment_fn,
-    #                     pose_dir=pose_dir,
-    #                 ))
-    #         elif data_source == 'MegaDepth':
-    #             datasets.append(
-    #                 MegaDepthDataset(
-    #                     data_root,
-    #                     npz_path,
-    #                     mode=mode,
-    #                     min_overlap_score=min_overlap_score,
-    #                     img_resize=self.mgdpt_img_resize,
-    #                     df=self.mgdpt_df,
-    #                     img_padding=self.mgdpt_img_pad,
-    #                     depth_padding=self.mgdpt_depth_pad,
-    #                     augment_fn=augment_fn,
-    #                     coarse_scale=self.coarse_scale,
-    #                 ))
-    #         elif data_source == 'Walk':
-    #             datasets.append(
-    #                 WALKDataset(
-    #                     data_root,
-    #                     npz_path,
-    #                     ??????,
-    #                     mode=mode,
-    #                     df=self.mgdpt_df,
-    #                     padding=self.mgdpt_img_pad,
-    #                     max_resize=max_resize,
-    #                     max_samples=max_samples,
-    #                     augment_fn=augment_fn,
-    #                     pose_dir=pose_dir,
-    #                 ))
-    #         else:
-    #             raise NotImplementedError()
-    #     return ConcatDataset(datasets)
+    def _build_concat_dataset(
+        self,
+        data_root,
+        npz_names,
+        npz_dir,
+        intrinsic_path,
+        mode,
+        max_resize,
+        max_samples,
+        min_overlap_score=0.0,
+        pose_dir=None,
+    ):
+        datasets = []
+        augment_fn = self.augment_fn if mode == 'train' else None
+        data_source = (self.trainval_data_source
+                       if mode in ['train', 'val'] else self.test_data_source)
+        if str(data_source).lower() == 'megadepth':
+            npz_names = [f'{n}.npz' for n in npz_names]
+
+        for npz_name in tqdm(
+                npz_names,
+                desc=f'[rank:{self.rank}] loading {mode} datasets',
+                disable=int(self.rank) != 0,
+        ):
+            # `ScanNetDataset`/`MegaDepthDataset` load all data from npz_path when initialized, which might take time.
+            npz_path = osp.join(npz_dir, npz_name)
+            if data_source == 'ScanNet':
+                datasets.append(
+                    ScanNetDataset(
+                        data_root,
+                        npz_path,
+                        intrinsic_path,
+                        mode=mode,
+                        min_overlap_score=min_overlap_score,
+                        augment_fn=augment_fn,
+                        pose_dir=pose_dir,
+                    ))
+            elif data_source == 'MegaDepth':
+                datasets.append(
+                    MegaDepthDataset(
+                        data_root,
+                        npz_path,
+                        mode=mode,
+                        min_overlap_score=min_overlap_score,
+                        img_resize=self.mgdpt_img_resize,
+                        df=self.mgdpt_df,
+                        img_padding=self.mgdpt_img_pad,
+                        depth_padding=self.mgdpt_depth_pad,
+                        augment_fn=augment_fn,
+                        coarse_scale=self.coarse_scale,
+                    ))
+            elif data_source == 'Walk':
+                datasets.append(
+                    WALKDataset(
+                        data_root,
+                        npz_path,
+                        npz_name,
+                        mode=mode,
+                        df=self.mgdpt_df,
+                        padding=self.mgdpt_img_pad,
+                        max_resize=max_resize,
+                        max_samples=max_samples,
+                        augment_fn=augment_fn,
+                        pose_dir=pose_dir,
+                    ))
+            else:
+                raise NotImplementedError()
+            
+        return ConcatDataset(datasets)
 
     def _build_concat_dataset_parallel(
         self,
@@ -293,11 +295,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         max_samples,
         min_overlap_score=0.0,
         pose_dir=None,
-        scene_list_path=None
     ):
-        if scene_list_path is not None:
-            with open(scene_list_path, 'r') as f:
-                seq_names = [name.strip() for name in f.readlines()]
         augment_fn = self.augment_fn if mode == 'train' else None
         data_source = (self.trainval_data_source
                        if mode in ['train', 'val'] else self.test_data_source)
@@ -355,7 +353,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                     padding=self.mgdpt_img_pad,
                     augment_fn=augment_fn,
                     max_samples=max_samples,
-                ))(seqname) for seqname in seq_names)
+                ))(seqname) for seqname in npz_names)
             else:
                 raise ValueError(f'Unknown dataset: {data_source}')
         return ConcatDataset(datasets)
