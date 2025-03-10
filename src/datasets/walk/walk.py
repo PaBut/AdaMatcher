@@ -16,7 +16,7 @@ from datetime import datetime
 from os.path import join, isdir, exists
 from torch.utils.data import Dataset
 
-from datasets.walk.utils import covision, intersected
+from src.datasets.walk.utils import covision, intersected
 from src.adamatcher.utils.coarse_module import pt_to_grid
 from src.datasets.utils import read_images
 
