@@ -29,6 +29,8 @@ class MultiSceneDataModule(pl.LightningDataModule):
     def __init__(self, args, config):
         super().__init__()
 
+        self.dataset_cfg = config.DATASET
+
         # 1. data config
         # Train and Val should from the same data source
         self.trainval_data_source = config.DATASET.TRAINVAL_DATA_SOURCE
@@ -132,6 +134,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 mode='train',
                 min_overlap_score=self.min_overlap_score_train,
                 pose_dir=self.train_pose_root,
+                dcfg=self.dataset_cfg.TRAIN
             )
             # setup multiple (optional) validation subsets
             if isinstance(self.val_list_path, (list, tuple)):
@@ -152,6 +155,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                             mode='val',
                             min_overlap_score=self.min_overlap_score_test,
                             pose_dir=self.val_pose_root,
+                            dcfg=self.dataset_cfg.VALID
                         ))
             else:
                 self.val_dataset = self._setup_dataset(
@@ -173,6 +177,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 mode='test',
                 min_overlap_score=self.min_overlap_score_test,
                 pose_dir=self.test_pose_root,
+                dcfg=self.dataset_cfg.TEST
             )
             logger.info(f'[rank:{self.rank}]: Test Dataset loaded!')
 
@@ -185,6 +190,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         mode='train',
         min_overlap_score=0.0,
         pose_dir=None,
+        dcfg=None
     ):
         """Setup train / val / test set."""
         with open(scene_list_path, 'r') as f:
@@ -212,6 +218,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
             max_resize=self.max_resize,
             max_samples=self.max_samples,
             pose_dir=pose_dir,
+            dcfg=dcfg,
         )
 
     def _build_concat_dataset(
@@ -225,6 +232,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         max_samples,
         min_overlap_score=0.0,
         pose_dir=None,
+        dcfg=None,
     ):
         datasets = []
         augment_fn = self.augment_fn if mode == 'train' else None
@@ -278,6 +286,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                         max_samples=max_samples,
                         augment_fn=augment_fn,
                         pose_dir=pose_dir,
+                        kwargs=dcfg
                     ))
             else:
                 raise NotImplementedError()
@@ -295,6 +304,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         max_samples,
         min_overlap_score=0.0,
         pose_dir=None,
+        dcfg=None,
     ):
         augment_fn = self.augment_fn if mode == 'train' else None
         data_source = (self.trainval_data_source
@@ -353,6 +363,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                     padding=self.mgdpt_img_pad,
                     augment_fn=augment_fn,
                     max_samples=max_samples,
+                    kwargs=dcfg
                 ))(seqname) for seqname in npz_names)
             else:
                 raise ValueError(f'Unknown dataset: {data_source}')
