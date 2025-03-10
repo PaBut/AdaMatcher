@@ -8,6 +8,7 @@ from yacs.config import CfgNode as CN
 _CN = CN()
 
 _CN.DATASET = CN()
+_CN.TRAINER = CN()
 
 TRAIN_DATA_ROOT = join('data', 'ZeroMatchTrain')
 TRAIN_NPZ_ROOT = join(TRAIN_DATA_ROOT, 'pseudo')
