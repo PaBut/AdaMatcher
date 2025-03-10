@@ -11,9 +11,9 @@ TRAIN_IMG_SIZE=832
 data_cfg_path="configs/data/walk_trainval_${TRAIN_IMG_SIZE}.py"
 main_cfg_path="configs/loftr/outdoor/loftr_ds_dense.py"
 
-n_nodes=4
-n_gpus_per_node=8 # 1 4 8
-torch_num_workers=8 # 1 4 8
+n_nodes=1
+n_gpus_per_node=4 # 1 4 8
+torch_num_workers=4 # 1 4 8
 batch_size=1
 pin_memory=true
 ckpt_path="weights/adamatcher.ckpt"
