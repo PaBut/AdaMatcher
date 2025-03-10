@@ -14,13 +14,12 @@ from pathlib import Path
 from functools import reduce, partial
 from datetime import datetime
 from os.path import join, isdir, exists
-
-from datasets.dataset import RGBDDataset
+from torch.utils.data import Dataset
 
 from datasets.utils import read_images
 from datasets.walk.utils import covision, intersected
+from src.adamatcher.utils.coarse_module import pt_to_grid
 
-from modules.utils.coarse_matching import pt_to_grid
 
 parse_mtd = lambda name: name.parent.stem.split()[1]
 parse_skip = lambda name: int(str(name).split(os.sep)[-1].rpartition('SP')[-1].strip().rpartition(' ')[0])
@@ -66,7 +65,7 @@ def inverse_affine_matrix(affine_matrix):
     return inverse_extended_matrix[:2]
 
 
-class WALKDataset(RGBDDataset):
+class WALKDataset(Dataset):
     def __init__(self,
                  root_dir,          # data root dit
                  npz_root,          # data info, like, overlap, image_path, depth_path
