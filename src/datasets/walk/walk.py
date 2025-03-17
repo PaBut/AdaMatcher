@@ -136,6 +136,8 @@ class WALKDataset(Dataset):
         vcap = cv2.VideoCapture(video_path)
         self.frame_size = (int(vcap.get(3)), int(vcap.get(4)))
 
+        logger.info(str(self.frame_size))
+
         if self.propagating:
             nums = {skip: [] for skip in self.skips}
             idxs = {skip: [] for skip in self.skips}

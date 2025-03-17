@@ -52,15 +52,15 @@ class AdaMatcher(nn.Module):
         else:
             if data["hw0_i"] == data["hw1_i"]:  # faster & better BN convergence
                 p3, p1 = self.backbone(
-                    torch.cat([data["image0"], data["image1"]], dim=0)
+                    torch.cat([data["color0"], data["color1"]], dim=0)
                 )
                 (feat_d8_0, feat_d8_1), (feat_d2_0, feat_d2_1) = p3.split(
                     data["bs"]
                 ), p1.split(data["bs"])
             else:  # handle different input shapes
                 (feat_d8_0, feat_d2_0), (feat_d8_1, feat_d2_1) = self.backbone(
-                    data["image0"]
-                ), self.backbone(data["image1"])
+                    data["color0"]
+                ), self.backbone(data["color1"])
 
         data.update(
             {
