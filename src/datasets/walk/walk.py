@@ -7,6 +7,7 @@ import torch
 import random
 import kornia as K
 import numpy as np
+
 import torch.nn.functional as F
 
 from os import listdir
@@ -20,6 +21,7 @@ from src.datasets.walk.utils import covision, intersected
 from src.adamatcher.utils.coarse_module import pt_to_grid
 from src.datasets.utils import read_images
 
+from loguru import logger
 
 parse_mtd = lambda name: name.parent.stem.split()[1]
 parse_skip = lambda name: int(str(name).split(os.sep)[-1].rpartition('SP')[-1].strip().rpartition(' ')[0])
@@ -109,6 +111,8 @@ class WALKDataset(Dataset):
         self.pproot = join(pproot, ppid, seq_name)
 
         if not self.propagating:
+            if not exists(self.pproot):
+                logger.info(str(self.pproot))
             assert exists(self.pproot)
         elif not exists(self.pproot):
             os.makedirs(self.pproot, exist_ok=True)
@@ -130,7 +134,7 @@ class WALKDataset(Dataset):
 
         video_path = join(root_dir, seq_name + '.mp4')
         vcap = cv2.VideoCapture(video_path)
-        self.frame_size = [int(vcap.get(3)), int(vcap.get(4))]
+        self.frame_size = (int(vcap.get(3)), int(vcap.get(4)))
 
         if self.propagating:
             nums = {skip: [] for skip in self.skips}
@@ -430,7 +434,7 @@ class WALKDataset(Dataset):
                 right = torch.matmul(right, M.t())
                 right = right[:, :2] / right[:, [2]]
                 # define affine transformation
-                perspective = partial(K.geometry.warp_perspective, M=M[None], dsize=(h, w), mode='bilinear')
+                perspective = partial(K.geometry.warp_perspective, M=M[None], dsize=(h, w), flags='bilinear')
                 # apply homography on mask1
                 mask1 = perspective(src=mask1[None, None].float())[0, 0].bool()
                 # apply homography on color1
