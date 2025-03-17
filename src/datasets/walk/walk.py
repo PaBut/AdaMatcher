@@ -304,6 +304,50 @@ class WALKDataset(Dataset):
         if len(labels) > 0: labels = np.concatenate(labels, axis=0).astype(np.float32)  # (N, 4)
 
         return labels
+    
+    def get_base_data(self, idx):
+
+        data = {
+            # image 0
+            'image0': None,
+            'color0': None,
+            'imsize0': None,
+            'resize0': None,
+
+            # image 1
+            'image1': None,
+            'color1': None,
+            'imsize1': None,
+            'resize1': None,
+
+            # To distinguish it from self-supervision
+            'pseudo_labels': torch.zeros((100000, 4), dtype=torch.float),  # (N, 4)
+            'gt': True,
+            'zs': False,
+
+            # image transform
+            'T_0to1': None,
+            'T_1to0': None,
+            'K0': None,
+            'K1': None,
+            # pair information
+            'scale0': None,
+            'scale1': None,
+            'dataset_name': None,
+            'scene_id': None,
+            'pair_id': None,
+            'pair_names': None,
+            'covisible0': None,
+            'covisible1': None,
+            # ETH3D dataset
+            'K0_': torch.zeros(12, dtype=torch.float),
+            'K1_': torch.zeros(12, dtype=torch.float),
+            # Hq
+            'Hq_aug': torch.eye(3, dtype=torch.float),
+            'Hq_ori': torch.eye(3, dtype=torch.float),
+        }
+
+        return data
 
     def __getitem__(self, idx):
         idx0, idx1 = self.pair_ids[idx]
@@ -532,7 +576,7 @@ class WALKDataset(Dataset):
             'covisible1': covision(pseudo_label[:, 2:], resize1).item(),
         }
 
-        item = super(WALKDataset, self).__getitem__(idx)
+        item = self.get_base_data(idx)
         item.update(data)
         data = item
 
