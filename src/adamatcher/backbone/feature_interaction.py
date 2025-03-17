@@ -365,7 +365,7 @@ class FICAS(nn.Module):
         return spv_class_l1_gt0
 
     def forward(self, x0, x1, data, x0_mask=None, x1_mask=None, use_cas=True):
-        if self.training and data["zs"].sum() > 0:
+        if data["zs"].sum() > 0:
             self.covisible_segment_zeroshot(data)
         h0, w0 = x0.shape[2:]
         h1, w1 = x1.shape[2:]
