@@ -10,13 +10,13 @@ _CN = CN()
 _CN.DATASET = CN()
 _CN.TRAINER = CN()
 
-TRAIN_DATA_ROOT = join('data', 'ZeroMatchTrain')
+TRAIN_DATA_ROOT = join('data', 'ZeroMatch')
 TRAIN_NPZ_ROOT = join(TRAIN_DATA_ROOT, 'pseudo')
 
-VALID_DATA_ROOT = join('data', 'ZeroMatchValid')
+VALID_DATA_ROOT = join('data', 'ZeroMatch')
 VALID_NPZ_ROOT = join(VALID_DATA_ROOT, 'pseudo')
 
-TEST_DATA_ROOT = join('data', 'ZeroMatchTest')
+TEST_DATA_ROOT = join('data', 'ZeroShotTest')
 TEST_NPZ_ROOT = join(TEST_DATA_ROOT, 'pseudo')
 
 _CN.NJOBS = 1  # x scenes
