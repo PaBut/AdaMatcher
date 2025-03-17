@@ -313,13 +313,11 @@ class FICAS(nn.Module):
 
         pseudo_labels = data["pseudo_labels"]
 
-        matches_t = torch.from_numpy(pseudo_labels)
-
         spv_class_l1_gt0 = self.compute_covisible_segment_zeroshot(
-            matches_t, h, w
+            pseudo_labels, h, w
         )
         spv_class_l1_gt1 = self.compute_covisible_segment_zeroshot(
-            matches_t[:, [2, 3, 0, 1]], h, w
+            pseudo_labels[:, [2, 3, 0, 1]], h, w
         )
 
         data.update(
