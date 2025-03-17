@@ -589,7 +589,13 @@ class WALKDataset(Dataset):
                                                        scale_factor=self.scale,
                                                        mode='nearest',
                                                        recompute_scale_factor=False)[0].bool()
-                data.update({'mask0': ts_mask_0, 'mask1': ts_mask_1})
+                [mask0_d8, mask1_d8] = F.interpolate(
+                    torch.stack([mask0, mask1], dim=0)[None].float(),
+                    scale_factor=1 / 8,
+                    mode='nearest',
+                    recompute_scale_factor=False,
+                )[0].bool()
+                data.update({'mask0': ts_mask_0, 'mask1': ts_mask_1, 'mask0_d8': mask0_d8, 'mask1_d8': mask1_d8})
             data.update({'mask0_i': mask0, 'mask1_i': mask1})
 
         return data

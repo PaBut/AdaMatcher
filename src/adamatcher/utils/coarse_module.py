@@ -23,6 +23,9 @@ def compute_max_candidates(p_m0, p_m1):
 def zeroshot_coarse_matching(feat_0, feat_1, data, mask_c0=None, mask_c1=None, temperature=None, sample_num=None):
     feat_c0, feat_c1 = feat_0, feat_1
 
+    if mask_c0 is None:
+        mask_c0, mask_c1 = mask_c0.flatten(-2), mask_c1.flatten(-2)
+
     feat_u0 = rearrange(feat_0, 'b c h1c w1c -> b (h1c w1c) c')
     feat_u1 = rearrange(feat_1, 'b c h1c w1c -> b (h1c w1c) c')
 
@@ -481,7 +484,7 @@ class CoarseModule(nn.Module):
         logger.info(f"{str(self.training)}, {str(data['zs'].sum())}")
 
         if data["zs"].sum() > 0:
-            zeroshot_coarse_matching(mask_feat0, mask_feat1, data, mask0_d8, mask1_d8, temperature=10, sample_num=1000)
+            zeroshot_coarse_matching(mask_feat0, mask_feat1, data, data.get("mask0", None), data.get("mask1", None), temperature=10, sample_num=1000)
 
         ######## 1. Get Overlapped Patch Index ##########################################
         (
