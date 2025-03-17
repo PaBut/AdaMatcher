@@ -331,9 +331,7 @@ class FICAS(nn.Module):
     def compute_covisible_segment_zeroshot(self, pseudo_labels, h, w):
         h_l2, w_l2 = h // self.scale_l2, w // self.scale_l2
 
-        matches_t = torch.from_numpy(pseudo_labels)
-
-        x0, y0, x1, y1 = matches_t[:, 0], matches_t[:, 1], matches_t[:, 2], matches_t[:, 3]
+        x0, y0, x1, y1 = pseudo_labels[:, 0], pseudo_labels[:, 1], pseudo_labels[:, 2], pseudo_labels[:, 3]
         grid_x0_l2 = (x0 / self.scale_l2).round().long().clamp(0, w_l2 - 1)
         grid_y0_l2 = (y0 / self.scale_l2).round().long().clamp(0, h_l2 - 1)
         grid_indices_l2 = grid_x0_l2 + grid_y0_l2 * w_l2
@@ -347,7 +345,6 @@ class FICAS(nn.Module):
 
         # Aggregate to coarser resolution (l1)
         h0_l1, w0_l1 = h // self.scale_l1, w // self.scale_l1
-        print(h0_l1, w0_l1)
         valid_mask0_l2 = valid_mask0_l2.reshape(h_l2, w_l2)
         valid_mask0_l1 = (
             rearrange(
