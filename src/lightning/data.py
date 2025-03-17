@@ -166,6 +166,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                     mode='val',
                     min_overlap_score=self.min_overlap_score_test,
                     pose_dir=self.val_pose_root,
+                    dcfg=self.dataset_cfg.VALID
                 )
             logger.info(f'[rank:{self.rank}] Train & Val Dataset loaded!')
         else:  # stage == 'test
