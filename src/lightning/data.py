@@ -277,7 +277,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 datasets.append(
                     WALKDataset(
                         data_root,
-                        npz_path,
+                        npz_dir,
                         npz_name,
                         mode,
                         max_resize,
