@@ -475,7 +475,7 @@ class CoarseModule(nn.Module):
         self.bs = bs
         mask0_d8, mask1_d8 = data.get("mask0_d8", None), data.get("mask1_d8", None)
 
-        logger.info(f"{str(self.training)}, {str(data["zs"].sum())}")
+        logger.info(f"{str(self.training)}, {str(data['zs'].sum())}")
 
         if self.training and data["zs"].sum() > 0:
             zeroshot_coarse_matching(mask_feat0, mask_feat1, data, mask0_d8, mask1_d8, temperature=10, sample_num=1000)
