@@ -167,13 +167,13 @@ class FineModule(nn.Module):
         m_bids = data['m_bids']
         patch_size_l1l2 = self.scale_l1 // self.scale_l2
 
-        feat_map1_unfold = F.unfold(
+        feat_map1_unfold_pre_pre = F.unfold(
             feat_d2_1,
             kernel_size=(self.W, self.W),
             stride=patch_size_l1l2,
             padding=self.W // 2,
         ).contiguous()
-        feat_map1_unfold_pre = rearrange(feat_map1_unfold,
+        feat_map1_unfold_pre = rearrange(feat_map1_unfold_pre_pre,
                                      'n (c ww) l -> n l ww c',
                                      ww=self.W**2).contiguous()
         feat_map1_unfold = rearrange(feat_map1_unfold_pre,
@@ -181,13 +181,13 @@ class FineModule(nn.Module):
                                      w1=self.W,
                                      w2=self.W).contiguous()
 
-        feat_map0_unfold = F.unfold(
+        feat_map0_unfold_pre_pre = F.unfold(
             feat_d2_0,
             kernel_size=(self.W, self.W),
             stride=patch_size_l1l2,
             padding=self.W // 2,
         ).contiguous()
-        feat_map0_unfold_pre = rearrange(feat_map0_unfold,
+        feat_map0_unfold_pre = rearrange(feat_map0_unfold_pre_pre,
                                      'n (c ww) l -> n l ww c',
                                      ww=self.W**2).contiguous()
         feat_map0_unfold = rearrange(feat_map0_unfold_pre,
@@ -218,8 +218,8 @@ class FineModule(nn.Module):
                       ((pt1_f_float[:, 1] - pt1_f_int[:, 1]).abs() <= radius)
             zs_ci_ids = pt0_c_int[:, 0] + pt0_c_int[:, 1] * data['hw0_c'][1]
             zs_cj_ids = pt1_c_int[:, 0] + pt1_c_int[:, 1] * data['hw1_c'][1]
-            feat_f0_z = feat_map0_unfold_pre[zs][zs_b_ids[indices], zs_ci_ids[indices]]  # [n, ww, cf]
-            feat_f1_z = feat_map1_unfold_pre[zs][zs_b_ids[indices], zs_cj_ids[indices]]  #TODO: leverage
+            feat_f0_z = feat_map0_unfold_pre_pre[zs][zs_b_ids[indices], zs_ci_ids[indices]]  # [n, ww, cf]
+            feat_f1_z = feat_map1_unfold_pre_pre[zs][zs_b_ids[indices], zs_cj_ids[indices]]  #TODO: leverage
 
             data.update({
                 'zs_b_ids': zs_b_ids[indices],
