@@ -280,17 +280,18 @@ class FineModule(nn.Module):
                     bs_kptsfeat0_from1 = feat_map0_unfold[
                         bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
                                                             2)  # [k, nwnw, c]
-                    bs_feat_c = self.down_proj(
-                        torch.cat(
-                            [
-                                feat_d8_0[bs_b_ids1_l1, bs_i_ids1_l1],
-                                feat_d8_1[bs_b_ids1_l1, bs_j_ids1_l1],
-                            ],
-                            dim=0,
-                        ))  # [2n, 2c->c]
+                    feat_d8 = [
+                        feat_d8_0[bs_b_ids1_l1, bs_i_ids1_l1],
+                        feat_d8_1[bs_b_ids1_l1, bs_j_ids1_l1],
+                    ]
                     if data["zs"].sum() > 0:
-                        bs_feat_c = torch.cat([bs_feat_c, feat_f0_z[bs_id, ...], feat_f1_z[bs_id, ...],], dim=0)
+                        feat_d8.append(feat_f0_z)
+                        feat_d8.append(feat_f1_z)
+
+                    bs_feat_c = self.down_proj(torch.cat(feat_d8, dim=0))  # [2n, 2c->c]
+
                     logger.info(f"bs_feat_c repeat: {repeat(bs_feat_c, 'n c -> n ww c', ww=self.W**2).shape}, {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
+                    
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
                             [
@@ -362,14 +363,18 @@ class FineModule(nn.Module):
                         bs_b_ids0_l1, bs_i_ids0_l1].flatten(1,
                                                             2)  # [k, nwnw, c]
 
-                    bs_feat_c = self.down_proj(
-                        torch.cat([
-                            feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],      # TODO: Leverage zeroshot supervision
-                            feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
-                        ]))
+                    feat_d8 = [
+                        feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
+                        feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
+                    ]
                     if data["zs"].sum() > 0:
-                        bs_feat_c = torch.cat([bs_feat_c, feat_f0_z[bs_id, ...], feat_f1_z[bs_id, ...],], dim=0)
+                        feat_d8.append(feat_f0_z)
+                        feat_d8.append(feat_f1_z)
+
+                    bs_feat_c = self.down_proj(torch.cat(feat_d8, dim=0))  # [2n, 2c->c]
+
                     logger.info(f"bs_feat_c repeat: {repeat(bs_feat_c, 'n c -> n ww c', ww=self.W**2).shape}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
+                    
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
                             [
