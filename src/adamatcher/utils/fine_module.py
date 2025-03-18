@@ -218,8 +218,8 @@ class FineModule(nn.Module):
                       ((pt1_f_float[:, 1] - pt1_f_int[:, 1]).abs() <= radius)
             zs_ci_ids = pt0_c_int[:, 0] + pt0_c_int[:, 1] * data['hw0_c'][1]
             zs_cj_ids = pt1_c_int[:, 0] + pt1_c_int[:, 1] * data['hw1_c'][1]
-            feat_f0_z = feat_map0_unfold_pre_pre[zs][zs_b_ids[indices], zs_ci_ids[indices]]  # [n, ww, cf]
-            feat_f1_z = feat_map1_unfold_pre_pre[zs][zs_b_ids[indices], zs_cj_ids[indices]]  #TODO: leverage
+            feat_f0_z = feat_map0_unfold[zs][zs_b_ids[indices], zs_ci_ids[indices]]  # [n, ww, cf]
+            feat_f1_z = feat_map1_unfold[zs][zs_b_ids[indices], zs_cj_ids[indices]]  #TODO: leverage
 
             data.update({
                 'zs_b_ids': zs_b_ids[indices],
@@ -285,8 +285,8 @@ class FineModule(nn.Module):
                         feat_d8_1[bs_b_ids1_l1, bs_j_ids1_l1],
                     ]
                     if data["zs"].sum() > 0:
-                        feat_d8.append(feat_f0_z)
-                        feat_d8.append(feat_f1_z)
+                        feat_d8.append(feat_f0_z.flatten(1, 2))
+                        feat_d8.append(feat_f1_z.flatten(1, 2))
 
                     logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, , {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
 
@@ -368,8 +368,8 @@ class FineModule(nn.Module):
                         feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
                     ]
                     if data["zs"].sum() > 0:
-                        feat_d8.append(feat_f0_z)
-                        feat_d8.append(feat_f1_z)
+                        feat_d8.append(feat_f0_z.flatten(1, 2))
+                        feat_d8.append(feat_f1_z.flatten(1, 2))
 
                     logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
 
