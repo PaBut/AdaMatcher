@@ -485,7 +485,7 @@ class CoarseModule(nn.Module):
         logger.info(f"{str(self.training)}, {str(data['zs'].sum())}")
 
         if data["zs"].sum() > 0:
-            zeroshot_coarse_matching(mask_feat0, mask_feat1, data, data.get("mask0", None), data.get("mask1", None), temperature=0.1, sample_num=1000)
+            zeroshot_coarse_matching(mask_feat0, mask_feat1, data, mask0_d8, mask1_d8, temperature=0.1, sample_num=1000)
 
         ######## 1. Get Overlapped Patch Index ##########################################
         (
