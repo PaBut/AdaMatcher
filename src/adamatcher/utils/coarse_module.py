@@ -69,6 +69,7 @@ def zeroshot_coarse_matching(feat_0, feat_1, data, mask_c0=None, mask_c1=None, t
         torch.cat((feat0[b_ids==i], feat_0[i]), dim=0),
         torch.cat((feat1[b_ids==i], feat_1[i]), dim=0)
     ) / temperature for i in range(znum)]
+    logger.info(f"sim_matrix: {[mat.shape for mat in sim_matrix]}, mask_c0: {mask_c0.shape}, mask_c1: {mask_c1.shape}")
     sim_matrix = [
         mat.masked_fill_(~(
                 torch.cat((m0.new_ones(n).bool(), m0))[:, None] *
