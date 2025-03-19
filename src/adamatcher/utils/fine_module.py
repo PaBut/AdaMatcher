@@ -104,8 +104,8 @@ class FineModule(nn.Module):
         softmax_temp = 1.0  # 1. / C ** .5
         heatmap = torch.softmax(softmax_temp * heatmap, dim=1).view(-1, nW, nW)
 
-        if heatmap_zs is not None:
-            heatmap = torch.cat([heatmap, heatmap_zs], dim=0)
+        # if heatmap_zs is not None:
+        #     heatmap = torch.cat([heatmap, heatmap_zs], dim=0)
 
         # compute coordinates from heatmap
         relative_kpts0from1 = dsnt.spatial_expectation2d(heatmap[None],
