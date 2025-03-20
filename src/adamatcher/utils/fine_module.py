@@ -102,7 +102,8 @@ class FineModule(nn.Module):
         heatmap = (self.heatmap_conv(sim_matrix).permute(0, 2, 3, 1).flatten(
             1, 2).contiguous().squeeze(1))
         softmax_temp = 1.0  # 1. / C ** .5
-        heatmap = torch.softmax(softmax_temp * heatmap, dim=1).view(-1, nW, nW)
+        # heatmap = torch.softmax(softmax_temp * heatmap, dim=1).view(-1, nW, nW)
+        heatmap = heatmap_zs
 
         # if heatmap_zs is not None:
         #     heatmap = torch.cat([heatmap, heatmap_zs], dim=0)
