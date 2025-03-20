@@ -311,6 +311,8 @@ class FineModule(nn.Module):
                     bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
                         bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)
                     
+                    logger.info(f"bs_kptsfeat1, bs_kptsfeat0_from1: {bs_kptsfeat1.shape}, {bs_kptsfeat0_from1.shape}")
+                    
 
                     heatmap_zs = None
                     if data["zs"].sum() > 0:
