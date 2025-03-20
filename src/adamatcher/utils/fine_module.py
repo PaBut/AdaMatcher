@@ -128,15 +128,16 @@ class FineModule(nn.Module):
     def compute_zeroshot_fine_loss(self, feat_f0, feat_f1, radius, W, data):
         M, WW, C = feat_f0.shape
         Nz = len(data['zs_b_ids']) if 'zs_b_ids' in data else 0
+        Ng = len(data['b_ids']) if 'b_ids' in data else 0
         pt0_f_int = data['zs_pt0_f_int']
         pt0_f_float = data['zs_pt0_f_float']  # (Nz, 2) in hw_f coordinates
         pt_x = (pt0_f_float[:, 0] - pt0_f_int[:, 0]) / radius
         pt_y = (pt0_f_float[:, 1] - pt0_f_int[:, 1]) / radius
         grid = torch.stack([pt_x, pt_y], dim=1)[:, None, None]  # (Nz, 1, 1, 2)
         grid_sample = partial(F.grid_sample, align_corners=True, mode='bilinear')
-        feat_f0_picked = rearrange(feat_f0[-Nz:], 'n (h w) c -> n c h w', h=W, w=W)
+        feat_f0_picked = rearrange(feat_f0[Ng:], 'n (h w) c -> n c h w', h=W, w=W)
         feat_f0_picked = grid_sample(feat_f0_picked, grid).squeeze()  # [(Nz, c)]
-        sim_matrix = torch.einsum('mc,mrc->mr', feat_f0_picked, feat_f1[-Nz:])  # (Nz, ww)
+        sim_matrix = torch.einsum('mc,mrc->mr', feat_f0_picked, feat_f1[Ng:])  # (Nz, ww)
         softmax_temp = 1. / C ** .5
         heatmap_z = torch.softmax(softmax_temp * sim_matrix, dim=1).view(-1, W, W)  # (Nz, w, w)
 
@@ -223,6 +224,8 @@ class FineModule(nn.Module):
 
             data.update({
                 'zs_b_ids': zs_b_ids[indices],
+                'zs_cj_ids': zs_cj_ids[indices],
+                'zs_ci_ids': zs_ci_ids[indices],
                 'zs_pt0_f_int': pt0_f_int[indices],
                 'zs_pt1_f_int': pt1_f_int[indices],
                 'zs_pt0_f_float': pt0_f_float[indices],
