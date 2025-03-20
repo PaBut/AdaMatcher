@@ -286,8 +286,8 @@ class FineModule(nn.Module):
                         bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
                                                             2)  # [k, nwnw, c]
                     feat_d8 = [
-                        feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]],
-                        feat_f1_z[zs_b_ids[indices], zs_cj_ids[indices]]
+                        feat_f0_z,
+                        feat_f1_z
                     ]
                     # if data["zs"].sum() > 0:
                     #     # feat_d8.append(feat_f0_z.flatten(1, 2))
@@ -375,8 +375,8 @@ class FineModule(nn.Module):
                     feat_d8 = [
                         # feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
                         # feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
-                        feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]],
-                        feat_f1_z[zs_b_ids[indices], zs_cj_ids[indices]]
+                        feat_f0_z,
+                        feat_f1_z
                     ]
                     # if data["zs"].sum() > 0:
                     #     # feat_d8.append(feat_f0_z.flatten(1, 2))
