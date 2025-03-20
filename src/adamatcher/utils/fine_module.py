@@ -279,8 +279,8 @@ class FineModule(nn.Module):
 
                 if len(bs_j_ids1_l1) > 0:
                     # level2 kpts
-                    # bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
-                    bs_kpts1_l2 = pt0_f_int
+                    bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
+                    # bs_kpts1_l2 = pt0_f_int
                     # bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
                     bs_patch0_center_coord_l2 = data["zs_pt0_f_float"]
 
@@ -378,8 +378,8 @@ class FineModule(nn.Module):
                 bs_kpts1from0_l1 = kpts1from0_l1[bs_mask]
 
                 if len(bs_j_ids0_l1) > 0:
-                    # bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
-                    bs_kpts0_l2 = pt0_f_int
+                    bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
+                    # bs_kpts0_l2 = pt0_f_int
                     # bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
                     bs_patch1_center_coord_l2 = data["zs_pt1_f_float"]
                     # fine level featur0
