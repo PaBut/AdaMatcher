@@ -92,18 +92,18 @@ class FineModule(nn.Module):
         _, NWW, _ = kptsfeat0_from1.shape
         nW = int(math.sqrt(NWW))
 
-        # kptsfeat1_picked = kptsfeat1[:, WW // 2, :].unsqueeze(1)
-        # att = torch.einsum('blc,bnc->bln', kptsfeat0_from1,
-        #                    kptsfeat1_picked)  # [k, (hw), 1]
-        # sim_matrix = rearrange(kptsfeat0_from1 * att,
-        #                        'n (h w) c -> n c h w',
-        #                        h=nW,
-        #                        w=nW).contiguous()
-        # heatmap = (self.heatmap_conv(sim_matrix).permute(0, 2, 3, 1).flatten(
-        #     1, 2).contiguous().squeeze(1))
-        # softmax_temp = 1.0  # 1. / C ** .5
-        # heatmap = torch.softmax(softmax_temp * heatmap, dim=1).view(-1, nW, nW)
-        heatmap = heatmap_zs
+        kptsfeat1_picked = kptsfeat1[:, WW // 2, :].unsqueeze(1)
+        att = torch.einsum('blc,bnc->bln', kptsfeat0_from1,
+                           kptsfeat1_picked)  # [k, (hw), 1]
+        sim_matrix = rearrange(kptsfeat0_from1 * att,
+                               'n (h w) c -> n c h w',
+                               h=nW,
+                               w=nW).contiguous()
+        heatmap = (self.heatmap_conv(sim_matrix).permute(0, 2, 3, 1).flatten(
+            1, 2).contiguous().squeeze(1))
+        softmax_temp = 1.0  # 1. / C ** .5
+        heatmap = torch.softmax(softmax_temp * heatmap, dim=1).view(-1, nW, nW)
+        # heatmap = heatmap_zs
 
         # if heatmap_zs is not None:
         #     heatmap = torch.cat([heatmap, heatmap_zs], dim=0)
