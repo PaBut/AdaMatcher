@@ -129,6 +129,7 @@ class FineModule(nn.Module):
         M, WW, C = feat_f0.shape
         Nz = len(data['zs_b_ids']) if 'zs_b_ids' in data else 0
         Ng = len(data['b_ids']) if 'b_ids' in data else 0
+        logger.info(f"Nz, Ng: {Nz}, {Ng}")
         pt0_f_int = data['zs_pt0_f_int']
         pt0_f_float = data['zs_pt0_f_float']  # (Nz, 2) in hw_f coordinates
         pt_x = (pt0_f_float[:, 0] - pt0_f_int[:, 0]) / radius
@@ -310,9 +311,12 @@ class FineModule(nn.Module):
                     bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
                                                                    2,
                                                                    dim=0)
+                    logger.info(f"1) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
                     ###########################################################################
                     bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
-                        bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)                    
+                        bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)   
+
+                    logger.info(f"2) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
 
                     heatmap_zs = None
                     if data["zs"].sum() > 0:
