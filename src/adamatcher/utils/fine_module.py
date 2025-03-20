@@ -277,7 +277,8 @@ class FineModule(nn.Module):
                 if len(bs_j_ids1_l1) > 0:
                     # level2 kpts
                     bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
-                    bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
+                    # bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
+                    bs_patch0_center_coord_l2 = data["zs_pt0_f_float"]
 
                     # fine level feature
                     bs_kptsfeat1 = feat_map1_unfold[bs_b_ids1_l1,
@@ -374,8 +375,8 @@ class FineModule(nn.Module):
 
                 if len(bs_j_ids0_l1) > 0:
                     bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
-                    bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
-
+                    # bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
+                    bs_patch1_center_coord_l2 = data["zs_pt1_f_float"]
                     # fine level featur0
                     bs_kptsfeat0 = feat_map0_unfold[bs_b_ids0_l1,
                                                     bs_j_ids0_l1].flatten(
@@ -413,8 +414,8 @@ class FineModule(nn.Module):
                                 # torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
                                 #           0),
                                 torch.cat([
-                                    feat_f0_z,
-                                    feat_f1_z
+                                    feat_f1_z,
+                                    feat_f0_z
                                 ], dim=0),
                                 repeat(
                                     bs_feat_c, 'n c -> n ww c', ww=self.W**2),
