@@ -331,7 +331,7 @@ class AdaMatcherLoss(nn.Module):
         if data["gt"].sum() > 0:
             spv_w_pt0_i_l2, spv_pt0_i_l2 = (
                 data['spv_w_pt0_i_l1'] / s1_l2.unsqueeze(1),
-                (data['spv_pt0_i_l1'] / s0_l2.unsqueeze(1)).round(),
+                (data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1)).round(),
             )
             spv_w_pt1_i_l2, spv_pt1_i_l2 = (
                 data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1),
@@ -344,7 +344,10 @@ class AdaMatcherLoss(nn.Module):
             data['j_ids0_l1'],
         )
         if len(b_ids0_l1) > 0:
-            gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1]
+            if data["gt"].sum() > 0:
+                gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1]
+            else:
+                gt_pt0_l2 = data["zs_pt0_f_float"][data["zs_b_ids"], data["zs_ci_ids"]]
             pt0 = data['kpts0_l2']  # * s0_l2
             p_mask0 = (pt0 == gt_pt0_l2).all(-1)
             pt0, gt_pt0_l2, b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
@@ -391,7 +394,10 @@ class AdaMatcherLoss(nn.Module):
         )
         if len(b_ids1_l1) > 0:
             pt1 = data['kpts1_l2']  # * s1_l2
-            gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
+            if data["gt"].sum() > 0:
+                gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
+            else:
+                gt_pt1_l2 = data["zs_pt1_f_float"][data["zs_b_ids"], data["zs_cj_ids"]]
             p_mask1 = (pt1 == gt_pt1_l2).all(-1)
             pt1, gt_pt1_l2, b_ids1_l1, i_ids1_l1, j_ids1_l1 = (
                 pt1[p_mask1],
