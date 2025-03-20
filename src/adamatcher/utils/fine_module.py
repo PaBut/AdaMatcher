@@ -205,6 +205,7 @@ class FineModule(nn.Module):
             zs = data['zs']
             pt0_i = data['zs_pt0_i']
             pt1_i = data['zs_pt1_i']
+            logger.info(f"pt0_i, pt1_i: {pt0_i.shape}, {pt1_i.shape}")
             zs_b_ids = data['zs_b_ids']
             scale_c = data['hw0_i'][0] / data['hw0_c'][0]  # 8.0
             scale_f = data['hw0_i'][0] / data['hw0_f'][0]  # 2.0
