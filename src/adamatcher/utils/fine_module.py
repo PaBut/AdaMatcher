@@ -299,6 +299,7 @@ class FineModule(nn.Module):
                     #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
 
                     logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, , {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
+                    logger.info(f"bs_feat_c: {bs_feat_c.shape}")
 
                     bs_feat_c = self.down_proj(
                         torch.cat(feat_d8, dim=0)
@@ -393,11 +394,12 @@ class FineModule(nn.Module):
                     #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
                     #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
 
-                    logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
-
                     bs_feat_c = self.down_proj(
                         torch.cat(feat_d8, dim=0)
                     )  # [2n, 2c->c]
+
+                    logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
+                    logger.info(f"bs_feat_c: {bs_feat_c.shape}")
                     
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
