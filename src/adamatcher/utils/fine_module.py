@@ -541,6 +541,9 @@ class FineModule(nn.Module):
         else:
             scale1_l2 = scale0_l2 = 0.0
 
+        logger.info(f"pts0, pts1: {pts0.shape}, {pts1.shape}")
+        logger.info(f"scale0_l2, scale1_l2: {scale0_l2}, {scale1_l2}")
+
         data.update({
             'mkpts0_f':
             pts0 * scale0_l2
