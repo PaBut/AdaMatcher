@@ -309,8 +309,12 @@ class FineModule(nn.Module):
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
                             [
-                                torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
-                                          0),
+                                # torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
+                                #           0),
+                                torch.cat([
+                                    feat_f0_z,
+                                    feat_f1_z
+                                ], dim=0),  # [n+m+n+m, ww, cf]
                                 repeat(
                                     bs_feat_c, 'n c -> n ww c', ww=self.W**2),
                             ],
@@ -405,8 +409,12 @@ class FineModule(nn.Module):
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
                             [
-                                torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
-                                          0),
+                                # torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
+                                #           0),
+                                torch.cat([
+                                    feat_f0_z,
+                                    feat_f1_z
+                                ], dim=0),
                                 repeat(
                                     bs_feat_c, 'n c -> n ww c', ww=self.W**2),
                             ],
