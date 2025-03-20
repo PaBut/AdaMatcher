@@ -72,7 +72,6 @@ class FineModule(nn.Module):
         kptsfeat0_from1: [k, ww, c]
         """
         # scale = scale**0.5
-        logger.info(f"scale: {len(scale)}, {[str(sc) for sc in scale]}")
         k, WW, C = kptsfeat1.shape
         W = int(math.sqrt(WW))
         # self.W, self.WW, self.C = W, WW, C
@@ -119,6 +118,9 @@ class FineModule(nn.Module):
         grid_normalized = create_meshgrid(nW, nW,
                                           True, heatmap.device).reshape(
                                               1, -1, 2)  # [1, NWW, 2]
+        
+        logger.info("heatmap shape: {}".format(str(heatmap.shape)))
+
         var = (
             torch.sum(grid_normalized**2 * heatmap.view(-1, NWW, 1), dim=1) -
             relative_kpts0from1**2)  # [M, 2]
