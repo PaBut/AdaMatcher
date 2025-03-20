@@ -494,6 +494,7 @@ class FineModule(nn.Module):
                 0, device=self.device, dtype=torch.long),
         })
         if len(b_ids1_l1):
+            logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
             pts0.append(data['kpts0from1_l2'])
             pts1.append(data['kpts1_l2'])
 
@@ -524,6 +525,7 @@ class FineModule(nn.Module):
                 0, device=self.device, dtype=torch.long),
         })
         if len(b_ids0_l1):
+            logger.info(f"kpts0_l2, kpts1from0_l2: {data['kpts0_l2'].shape}, {data['kpts1from0_l2'].shape}")
             pts1.append(data['kpts1from0_l2'])
             pts0.append(data['kpts0_l2'])
 
