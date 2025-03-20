@@ -309,10 +309,7 @@ class FineModule(nn.Module):
                                                                    dim=0)
                     ###########################################################################
                     bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
-                        bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)
-                    
-                    logger.info(f"bs_kptsfeat1, bs_kptsfeat0_from1: {bs_kptsfeat1.shape}, {bs_kptsfeat0_from1.shape}")
-                    
+                        bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)                    
 
                     heatmap_zs = None
                     if data["zs"].sum() > 0:
@@ -400,7 +397,7 @@ class FineModule(nn.Module):
                     
                     heatmap_zs = None
                     if data["zs"].sum() > 0:
-                        heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat0_from1, bs_kptsfeat1, radius, W, data)
+                        heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat1_from0, bs_kptsfeat0, radius, W, data)
 
                     (
                         bs_relative_kpts1from0_l2,
