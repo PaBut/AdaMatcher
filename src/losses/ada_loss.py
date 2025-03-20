@@ -282,7 +282,7 @@ class AdaMatcherLoss(nn.Module):
                 weight1 = (data['mask0_d8'].flatten(-2)[..., None] *
                            data['mask1_d8'].flatten(-2)[:, None]).float()
 
-            if 1:
+            if data["gt"].sum() > 0:
                 mask_dice_loss, mask_focal_loss = [], []
                 # overlap_scores1, overlap_scores0 = data['overlap_scores1'], data['overlap_scores0']
                 for bs_id in range(self.bs):
@@ -321,7 +321,8 @@ class AdaMatcherLoss(nn.Module):
                     mask_focal_loss.append(bs_mask_focal_loss)
                 mask_focal_loss = torch.stack(mask_focal_loss, dim=0).mean()
                 mask_loss = mask_focal_loss
-
+            else:
+                mask_loss = self.compute_coarse_zeroshot_loss(data['zs_conf_matrix'])
             coarse_loss = self.class_weight * cas_loss + self.mask_weight * mask_loss
         else:
             coarse_loss = None
