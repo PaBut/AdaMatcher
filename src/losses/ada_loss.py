@@ -445,9 +445,9 @@ class AdaMatcherLoss(nn.Module):
         if coarse_loss is not None:
             loss = coarse_loss + fine_loss  # 1.5*fine_loss
             loss_scalars = {
-                'mf':
-                mask_focal_loss.clone().detach().cpu(
-                ),  # (mask_focal_loss0.clone().detach().cpu() + mask_focal_loss1.clone().detach().cpu()) / 2,
+                # 'mf':
+                # mask_focal_loss.clone().detach().cpu(
+                # ),  # (mask_focal_loss0.clone().detach().cpu() + mask_focal_loss1.clone().detach().cpu()) / 2,
                 'c': (cas_loss0.clone().detach().cpu() +
                       cas_loss1.clone().detach().cpu()) / 2,
                 'f':
