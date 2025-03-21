@@ -475,7 +475,7 @@ class FineModule(nn.Module):
             torch.cat(kpts0from1_l2, dim=0)[m_bids]
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'relative_kpts0from1_l2':
-            torch.cat(relative_kpts0from1_l2, dim=0)
+            torch.cat(relative_kpts0from1_l2, dim=0)[m_bids]
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'patch0_center_coord_l2':
             torch.cat(patch0_center_coord_l2, dim=0)
@@ -506,7 +506,7 @@ class FineModule(nn.Module):
             torch.cat(kpts1from0_l2, dim=0)[m_bids]
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'relative_kpts1from0_l2':
-            torch.cat(relative_kpts1from0_l2, dim=0)
+            torch.cat(relative_kpts1from0_l2, dim=0)[m_bids]
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'patch1_center_coord_l2':
             torch.cat(patch1_center_coord_l2, dim=0)
