@@ -478,10 +478,10 @@ class FineModule(nn.Module):
             torch.cat(relative_kpts0from1_l2, dim=0)[m_bids]
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'patch0_center_coord_l2':
-            torch.cat(patch0_center_coord_l2, dim=0)
+            torch.cat(patch0_center_coord_l2, dim=0)[m_bids]
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'std0':
-            torch.cat(std0, dim=0) if len(b_ids1_l1) else torch.empty(
+            torch.cat(std0, dim=0)[m_bids] if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids1_l2':
             b_ids1_l1.clone() if len(b_ids1_l1) else torch.empty(
@@ -509,10 +509,10 @@ class FineModule(nn.Module):
             torch.cat(relative_kpts1from0_l2, dim=0)[m_bids]
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'patch1_center_coord_l2':
-            torch.cat(patch1_center_coord_l2, dim=0)
+            torch.cat(patch1_center_coord_l2, dim=0)[m_bids]
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'std1':
-            torch.cat(std1, dim=0) if len(b_ids0_l1) else torch.empty(
+            torch.cat(std1, dim=0)[m_bids] if len(b_ids0_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids0_l2':
             b_ids0_l1.clone() if len(b_ids0_l1) else torch.empty(
