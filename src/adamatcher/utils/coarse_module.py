@@ -596,7 +596,7 @@ class CoarseModule(nn.Module):
                     o_scale0 = self.max_o_scale
                 scales.append(o_scale0)
 
-                if self.training and data["gt"].sum() > 0:
+                if self.training and data["gt"].sum() > 0: # TODO: integrate with GIM
                     gt1 = (
                         data["spv_i_ids1_l0"][data["spv_b_ids1_l1"] == bs_id],
                         data["spv_i_ids1_l0l1"][data["spv_b_ids1_l1"] == bs_id],
@@ -784,6 +784,8 @@ class CoarseModule(nn.Module):
                 else torch.empty(0, device=self.device),
             )
         )
+
+        logger.info(f"m_bids: {data['m_bids'].shape}")
 
     @torch.no_grad()
     def dual_filter(self, data):
