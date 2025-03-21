@@ -413,9 +413,13 @@ class AdaMatcherLoss(nn.Module):
             r_w_pt1 = data['relative_kpts0from1_l2'][p_mask1]
             patch0_center_coord = data['patch0_center_coord_l2'][p_mask1]
             std0 = data['std0'][p_mask1]
-            gt_w_pt1_l2 = spv_w_pt1_i_l2[b_ids1_l1, j_ids1_l1]
-            gt_r_w_pt1_l2 = (gt_w_pt1_l2 -
+            
+            if data["gt"].sum() > 0:
+                gt_w_pt1_l2 = spv_w_pt1_i_l2[b_ids1_l1, j_ids1_l1]
+                gt_r_w_pt1_l2 = (gt_w_pt1_l2 -
                              patch0_center_coord) / (self.window_size // 2)
+            else:
+                gt_r_w_pt0_l2 = data["expec_f_zs"]
 
             F_1to0 = pose2fundamental(data['K1'], data['K0'], data['T_1to0'])
             fine_loss1 = self._compute_fine_loss_l2(
