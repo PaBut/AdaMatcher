@@ -414,6 +414,7 @@ class AdaMatcherLoss(nn.Module):
 
             w_pt1 = data['kpts0from1_l2'][p_mask1]  # * s0_l2
             r_w_pt1 = data['relative_kpts0from1_l2'][p_mask1]
+            logger.info(f"r_w_pt1: {r_w_pt1.shape}")
             patch0_center_coord = data['patch0_center_coord_l2'][p_mask1]
             std0 = data['std0'][p_mask1]
             
