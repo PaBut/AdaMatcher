@@ -134,6 +134,9 @@ class AdaMatcherLoss(nn.Module):
 
         weight = self.set_weight(std0)
         correct_mask = torch.norm(gt_r_w_pt1, p=float('inf'), dim=1) < 1.0
+        logger.info(f"correct_mask: {correct_mask.shape}")
+        logger.info(f"r_w_pt1: {r_w_pt1.shape}")
+        logger.info(f"gt_r_w_pt1: {gt_r_w_pt1.shape}")
         self.fine_v_num += correct_mask.sum().float().cpu()
         if not correct_mask.any():
             if (
