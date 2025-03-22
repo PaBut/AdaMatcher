@@ -417,7 +417,7 @@ class AdaMatcherLoss(nn.Module):
             r_w_pt1 = data['relative_kpts0from1_l2']#[p_mask1]
             logger.info(f"r_w_pt1: {r_w_pt1.shape}")
             patch0_center_coord = data['patch0_center_coord_l2'][p_mask1]
-            std0 = data['std0'][p_mask1]
+            std0 = data['std0']#[p_mask1]
             
             if data["gt"].sum() > 0:
                 gt_w_pt1_l2 = spv_w_pt1_i_l2[b_ids1_l1, j_ids1_l1]
