@@ -156,7 +156,10 @@ class FineModule(nn.Module):
         pt1_f_int = data['zs_pt1_f_int']
         pt1_f_float = data['zs_pt1_f_float']
         expec_f_zs = (pt1_f_float - pt1_f_int) / radius
-        data.update({"expec_f_zs": expec_f_zs})
+        if "expec_f_zs" in data:
+            data.update({"expec_f_zs": torch.cat([expec_f_zs, data["expec_f_zs"]])})
+        else:
+            data.update({"expec_f_zs": expec_f_zs})
 
     def forward(
         self,
@@ -549,6 +552,11 @@ class FineModule(nn.Module):
 
         logger.info(f"pts0, pts1: {pts0.shape}, {pts1.shape}")
         logger.info(f"scale0_l2, scale1_l2: {scale0_l2.shape}, {scale1_l2.shape}")
+
+        if data["zs"].sum() > 0:
+            data.update({
+                "expec_f_zs": data["expec_f_zs"][m_bids]
+            })
 
         data.update({
             'mkpts0_f':
