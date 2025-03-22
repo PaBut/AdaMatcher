@@ -291,7 +291,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
             else:
                 raise NotImplementedError()
             
-        return ConcatDataset(datasets)
+        return ConcatDataset([ds for ds in datasets if len(ds) > 0])
 
     def _build_concat_dataset_parallel(
         self,
