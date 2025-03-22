@@ -66,7 +66,8 @@ class FineModule(nn.Module):
                           patch0_center_coord_l2,
                           scale,
                           flag=False,
-                          heatmap_zs=None):
+                          heatmap_zs=None,
+                          m_bids=None):
         """
         kptsfeat1:       [k, ww, c]
         kptsfeat0_from1: [k, ww, c]
@@ -124,7 +125,7 @@ class FineModule(nn.Module):
 
         var = (
             torch.sum(grid_normalized**2 * heatmap.view(-1, NWW, 1), dim=1) -
-            relative_kpts0from1**2)  # [M, 2]
+            relative_kpts0from1**2)[m_bids]  # [M, 2]
         std = torch.sum(torch.sqrt(torch.clamp(var, min=1e-10)),
                         -1)  # [M]  clamp needed for numerical stability
 
@@ -354,7 +355,8 @@ class FineModule(nn.Module):
                         bs_patch0_center_coord_l2,
                         o_scale0,
                         flag=self.post_scale,
-                        heatmap_zs=heatmap_zs
+                        heatmap_zs=heatmap_zs,
+                        m_bids=m_bids
                     )
 
                     bs_i_ids1_l2 = (
@@ -452,7 +454,8 @@ class FineModule(nn.Module):
                         bs_patch1_center_coord_l2,
                         o_scale1,
                         flag=self.post_scale,
-                        heatmap_zs=heatmap_zs
+                        heatmap_zs=heatmap_zs,
+                        m_bids=m_bids
                     )
 
                     bs_i_ids0_l2 = (
