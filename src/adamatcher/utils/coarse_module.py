@@ -424,7 +424,7 @@ class CoarseModule(nn.Module):
             }
         )
 
-        if self.training and data["zs"].sum() > 0:
+        if self.training and data["gt"].sum() > 0:
             # TODO: rewrite for zeroshot
             spv_class_b0_l0_ids = data["spv_class_b0_l0_ids"]
             spv_class_k0_l0_ids = data["spv_class_k0_l0_ids"]
