@@ -140,6 +140,8 @@ class PL_AdaMatcher(pl.LightningModule):
         with self.profiler.profile("AdaMatcher"):
             self.matcher(batch)
 
+        torch.cuda.empty_cache()
+
         self.count += 1
         # with self.profiler.profile("Compute fine supervision"):
         #     compute_supervision_fine(batch, self.config)
