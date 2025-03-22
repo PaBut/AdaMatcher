@@ -125,7 +125,7 @@ class FineModule(nn.Module):
 
         var = (
             torch.sum(grid_normalized**2 * heatmap.view(-1, NWW, 1), dim=1) -
-            relative_kpts0from1**2)[m_bids]  # [M, 2]
+            relative_kpts0from1**2)#[m_bids]  # [M, 2]
         std = torch.sum(torch.sqrt(torch.clamp(var, min=1e-10)),
                         -1)  # [M]  clamp needed for numerical stability
 
@@ -488,7 +488,7 @@ class FineModule(nn.Module):
             torch.cat(patch0_center_coord_l2, dim=0)[m_bids]
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'std0':
-            torch.cat(std0, dim=0) if len(b_ids1_l1) else torch.empty(
+            torch.cat(std0, dim=0)[zs_b_ids] if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids1_l2':
             b_ids1_l1.clone() if len(b_ids1_l1) else torch.empty(
@@ -520,7 +520,7 @@ class FineModule(nn.Module):
             torch.cat(patch1_center_coord_l2, dim=0)[m_bids]
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'std1':
-            torch.cat(std1, dim=0) if len(b_ids0_l1) else torch.empty(
+            torch.cat(std1, dim=0)[zs_b_ids] if len(b_ids0_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids0_l2':
             b_ids0_l1.clone() if len(b_ids0_l1) else torch.empty(
