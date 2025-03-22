@@ -126,6 +126,7 @@ class FineModule(nn.Module):
         var = (
             torch.sum(grid_normalized**2 * heatmap.view(-1, NWW, 1), dim=1) -
             relative_kpts0from1**2)#[m_bids]  # [M, 2]
+        logger.info("var shape: {}".format(str(var.shape)))
         std = torch.sum(torch.sqrt(torch.clamp(var, min=1e-10)),
                         -1)  # [M]  clamp needed for numerical stability
 
