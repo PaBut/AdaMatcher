@@ -367,7 +367,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 ))(seqname) for seqname in npz_names)
             else:
                 raise ValueError(f'Unknown dataset: {data_source}')
-        return ConcatDataset(datasets)
+        return ConcatDataset([ds for ds in datasets if len(ds) > 0])
 
     def train_dataloader(self):
         """Build training dataloader for ScanNet / MegaDepth."""

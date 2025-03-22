@@ -56,8 +56,8 @@ class RandomConcatSampler(Sampler):
             low = 0 if d_idx == 0 else self.data_source.cumulative_sizes[d_idx
                                                                          - 1]
             high = self.data_source.cumulative_sizes[d_idx]
-            if low == high:
-                continue
+            # if low == high:
+            #     continue
             if self.subset_replacement:
                 rand_tensor = torch.randint(
                     low,
