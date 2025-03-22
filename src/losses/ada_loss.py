@@ -331,6 +331,8 @@ class AdaMatcherLoss(nn.Module):
         else:
             coarse_loss = None
 
+        torch.cuda.empty_cache()
+
         # fine level
         if data["gt"].sum() > 0:
             spv_w_pt0_i_l2, spv_pt0_i_l2 = (
