@@ -193,9 +193,9 @@ def main():
     )
 
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    callbacks = ckpt_callback
-    # if not args.disable_ckpt:
-    #     callbacks.append(ckpt_callback)
+    callbacks = [lr_monitor]
+    if not args.disable_ckpt:
+        callbacks.append(ckpt_callback)
 
     trainer_params = {
         "accelerator": args.accelerator,
