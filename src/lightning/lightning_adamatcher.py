@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 from einops.einops import rearrange
 from loguru import logger
@@ -74,6 +75,7 @@ class PL_AdaMatcher(pl.LightningModule):
 
         # Pretrained weights
         if pretrained_ckpt:
+            torch.serialization.add_safe_globals([ModelCheckpoint])
             weights = torch.load(pretrained_ckpt, map_location="cpu", weights_only=True)["state_dict"]
             # self.matcher.load_state_dict({k.replace('matcher.', ''): v for k, v in weights.items()})
             self.load_state_dict(weights)
