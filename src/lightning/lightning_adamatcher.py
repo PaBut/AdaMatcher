@@ -77,6 +77,8 @@ class PL_AdaMatcher(pl.LightningModule):
         if pretrained_ckpt:
             torch.serialization.add_safe_globals([ModelCheckpoint])
             weights = torch.load(pretrained_ckpt, map_location="cpu", weights_only=False)["state_dict"]
+            logger.info(f"{sum(p.numel() for p in weights.values())}")
+            logger.info(f"{sum(p.numel() for p in self.matcher.parameters())}")
             # self.matcher.load_state_dict({k.replace('matcher.', ''): v for k, v in weights.items()})
             self.load_state_dict(weights)
             logger.info(f"Load '{pretrained_ckpt}' as pretrained checkpoint")
@@ -93,7 +95,7 @@ class PL_AdaMatcher(pl.LightningModule):
         # FIXME: The scheduler did not work properly when `--resume_from_checkpoint`
         optimizer = build_optimizer(self, self.config)
         scheduler = build_scheduler(self.config, optimizer)
-        return [optimizer], [scheduler]
+        return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
     def optimizer_step(
         self,
