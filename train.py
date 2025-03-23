@@ -193,7 +193,7 @@ def main():
     )
 
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    callbacks = [lr_monitor]
+    callbacks = []
     if not args.disable_ckpt:
         callbacks.append(ckpt_callback)
 
@@ -224,7 +224,7 @@ def main():
         callbacks=callbacks,
         logger=logger,
         sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
-        # replace_sampler_ddp=False,  # use custom sampler
+        replace_sampler_ddp=False,  # use custom sampler
         # reload_dataloaders_every_n_epoch=0,  # avoid repeated samples!
         enable_model_summary=True,
         # resume_from_checkpoint=args.ckpt_path,
