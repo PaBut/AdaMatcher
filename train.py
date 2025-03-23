@@ -212,14 +212,14 @@ def main():
 
     # Lightning Trainer
     trainer = pl.Trainer(
-        strategy=DDPStrategy(
-            find_unused_parameters=False,  # True,
-            # num_nodes=args.num_nodes,
-            # strategy="ddp_sharded",
-            # sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
-        ),
+        # strategy=DDPStrategy(
+        #     find_unused_parameters=False,  # True,
+        #     # num_nodes=args.num_nodes,
+        #     # strategy="ddp_sharded",
+        #     # sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
+        # ),
         # strategy=DDPPlugin(find_unused_parameters=False)
-        # strategy="ddp",
+        strategy="ddp",
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
         logger=logger,
@@ -238,6 +238,7 @@ def main():
 
     loguru_logger.info(f"Trainer initialized!")
     loguru_logger.info(f"Start training!")
+    # loguru_logger.info(f"{len(trainer.strategy.optimizers[0].param_groups)}")
 
     trainer.fit(model, datamodule=data_module, ckpt_path=args.ckpt_path)
 
