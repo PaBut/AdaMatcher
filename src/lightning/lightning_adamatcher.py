@@ -76,7 +76,7 @@ class PL_AdaMatcher(pl.LightningModule):
         # Pretrained weights
         if pretrained_ckpt:
             torch.serialization.add_safe_globals([ModelCheckpoint])
-            weights = torch.load(pretrained_ckpt, map_location="cpu", weights_only=True)["state_dict"]
+            weights = torch.load(pretrained_ckpt, map_location="cpu", weights_only=False)["state_dict"]
             # self.matcher.load_state_dict({k.replace('matcher.', ''): v for k, v in weights.items()})
             self.load_state_dict(weights)
             logger.info(f"Load '{pretrained_ckpt}' as pretrained checkpoint")
