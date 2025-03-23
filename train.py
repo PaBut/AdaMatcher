@@ -6,6 +6,8 @@ import pprint
 from distutils.util import strtobool
 from pathlib import Path
 
+from pytorch_lightning.strategies import DDPStrategy
+
 import numpy as np
 import pytorch_lightning as pl
 from loguru import logger as loguru_logger
@@ -210,13 +212,14 @@ def main():
 
     # Lightning Trainer
     trainer = pl.Trainer(
-        # plugins=DDPStrategy(
-        #     find_unused_parameters=False,  # True,
-        #     num_nodes=args.num_nodes,
-        #     # strategy="ddp_sharded",
-        #     sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
-        # ),
-        strategy="ddp",
+        strategy=DDPStrategy(
+            find_unused_parameters=False,  # True,
+            num_nodes=args.num_nodes,
+            # strategy="ddp_sharded",
+            sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
+        ),
+        # strategy=DDPPlugin(find_unused_parameters=False)
+        # strategy="ddp",
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
         logger=logger,
