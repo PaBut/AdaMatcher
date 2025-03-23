@@ -11,7 +11,6 @@ import pytorch_lightning as pl
 from loguru import logger as loguru_logger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.plugins import DDPPlugin, DDPShardedPlugin
 from pytorch_lightning.utilities import rank_zero_only
 
 from src.config.default import get_cfg_defaults
@@ -63,10 +62,70 @@ def parse_args():
         action="store_true",
         help="load datasets in with multiple processes.",
     )
+    parser.add_argument(
+        "--gpus",
+        type=int,
+        default=1,
+        help="number of GPUs to use (can also be a list like '0,1' but we simplify to int here)",
+    )
+    parser.add_argument(
+        "--num_nodes",
+        type=int,
+        default=1,
+        help="number of nodes for distributed training",
+    )
+    parser.add_argument(
+        "--accelerator",
+        type=str,
+        default="cuda",
+        choices=["cpu", "cuda", "tpu", "ipu", "hpu", "mps", "ddp", "ddp_spawn", "dp"],
+        help="accelerator type for training",
+    )
+    parser.add_argument(
+        "--check_val_every_n_epoch",
+        type=int,
+        default=1,
+        help="check validation every n epochs",
+    )
+    parser.add_argument(
+        "--log_every_n_steps",
+        type=int,
+        default=1,
+        help="log every n steps",
+    )
+    parser.add_argument(
+        "--flush_logs_every_n_steps",
+        type=int,
+        default=1,
+        help="flush logs every n steps",
+    )
+    parser.add_argument(
+        "--limit_val_batches",
+        type=float,
+        default=1.0,
+        help="limit the number of validation batches (float for percentage, int for exact number)",
+    )
+    parser.add_argument(
+        "--num_sanity_val_steps",
+        type=int,
+        default=10,
+        help="number of sanity validation steps to run before training",
+    )
+    parser.add_argument(
+        "--benchmark",
+        type=lambda x: bool(strtobool(x)),
+        default=True,
+        help="enable cudnn.benchmark for faster training with fixed input sizes",
+    )
+    parser.add_argument(
+        "--max_epochs",
+        type=int,
+        default=30,
+        help="maximum number of epochs to train",
+    )
 
-    parser = pl.Trainer.add_argparse_args(parser)
+    # parser = pl.Trainer.add_argparse_args(parser)
     return parser.parse_args()
-
 
 def main():
     # parse arguments
@@ -136,31 +195,48 @@ def main():
     if not args.disable_ckpt:
         callbacks.append(ckpt_callback)
 
+    trainer_params = {
+        "accelerator": args.accelerator,
+        "devices": args.gpus,  # Maps 'gpus' to 'devices'
+        "num_nodes": args.num_nodes,
+        "max_epochs": args.max_epochs,
+        "check_val_every_n_epoch": args.check_val_every_n_epoch,
+        "log_every_n_steps": args.log_every_n_steps,
+        # "flush_logs_every_n_steps": args.flush_logs_every_n_steps,
+        "limit_val_batches": args.limit_val_batches,
+        "num_sanity_val_steps": args.num_sanity_val_steps,
+        "benchmark": args.benchmark,
+    }
+
     # Lightning Trainer
-    trainer = pl.Trainer.from_argparse_args(
-        args,
-        plugins=DDPPlugin(
-            find_unused_parameters=False,  # True,
-            num_nodes=args.num_nodes,
-            # strategy="ddp_sharded",
-            sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
-        ),
+    trainer = pl.Trainer(
+        # plugins=DDPStrategy(
+        #     find_unused_parameters=False,  # True,
+        #     num_nodes=args.num_nodes,
+        #     # strategy="ddp_sharded",
+        #     sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
+        # ),
+        strategy="ddp",
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
         logger=logger,
         sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
-        replace_sampler_ddp=False,  # use custom sampler
-        reload_dataloaders_every_epoch=False,  # avoid repeated samples!
-        weights_summary="full",
-        resume_from_checkpoint=args.ckpt_path,
+        # replace_sampler_ddp=False,  # use custom sampler
+        # reload_dataloaders_every_n_epoch=0,  # avoid repeated samples!
+        enable_model_summary=True,
+        # resume_from_checkpoint=args.ckpt_path,
         profiler=profiler,
+        **trainer_params,
         # precision=16,
         # auto_lr_find=True
     )
+
+    # LightningCLI(model_class=model)
+
     loguru_logger.info(f"Trainer initialized!")
     loguru_logger.info(f"Start training!")
 
-    trainer.fit(model, datamodule=data_module)
+    trainer.fit(model, datamodule=data_module, ckpt_path=args.ckpt_path)
 
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ class PL_AdaMatcher(pl.LightningModule):
 
         # Pretrained weights
         if pretrained_ckpt:
-            weights = torch.load(pretrained_ckpt, map_location="cpu")["state_dict"]
+            weights = torch.load(pretrained_ckpt, map_location="cpu", weights_only=False)["state_dict"]
             # self.matcher.load_state_dict({k.replace('matcher.', ''): v for k, v in weights.items()})
             self.load_state_dict(weights)
             logger.info(f"Load '{pretrained_ckpt}' as pretrained checkpoint")
@@ -216,7 +216,7 @@ class PL_AdaMatcher(pl.LightningModule):
 
         return {"loss": batch["loss"], "loss_scalars": batch["loss_scalars"]}
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self, outputs):
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
         if self.trainer.global_rank == 0:
             self.logger.experiment.add_scalar(
@@ -394,7 +394,7 @@ class PL_AdaMatcher(pl.LightningModule):
             # 'figures': figures,
         }
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self, outputs):
         # handle multiple validation sets
         multi_outputs = (
             [outputs] if not isinstance(outputs[0], (list, tuple)) else outputs

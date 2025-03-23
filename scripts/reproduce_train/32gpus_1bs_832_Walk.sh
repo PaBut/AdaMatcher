@@ -23,7 +23,7 @@ python3 -u ./train.py \
     ${data_cfg_path} \
     ${main_cfg_path} \
     --exp_name=${exp_name} \
-    --gpus=${n_gpus_per_node} --num_nodes=${n_nodes} --accelerator="ddp" \
+    --gpus=${n_gpus_per_node} --num_nodes=${n_nodes} --accelerator="cpu" \
     --batch_size=${batch_size} --num_workers=${torch_num_workers} --pin_memory=${pin_memory} \
     --check_val_every_n_epoch=1 \
     --log_every_n_steps=1 \
