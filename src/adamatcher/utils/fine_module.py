@@ -153,7 +153,6 @@ class FineModule(nn.Module):
 
         return heatmap_z
 
-    @torch.no_grad()
     def spvc_zeroshot_fine(self, radius, data):
         pt1_f_int = data['zs_pt1_f_int']
         pt1_f_float = data['zs_pt1_f_float']
