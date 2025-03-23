@@ -214,9 +214,10 @@ def main():
     trainer = pl.Trainer(
         strategy=DDPStrategy(
             find_unused_parameters=False,  # True,
+            accelerator=args.accelerator
             # num_nodes=args.num_nodes,
             # strategy="ddp_sharded",
-            sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
+            # sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
         ),
         # strategy=DDPPlugin(find_unused_parameters=False)
         # strategy="ddp",
