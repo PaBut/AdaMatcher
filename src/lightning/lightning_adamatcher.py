@@ -89,6 +89,8 @@ class PL_AdaMatcher(pl.LightningModule):
         self.all_time = 0.0
         self.metric_time = 0.0
 
+        self.validation_step_outputs = []
+
     def configure_optimizers(self):
         # FIXME: The scheduler did not work properly when `--resume_from_checkpoint`
         optimizer = build_optimizer(self, self.config)
@@ -392,14 +394,20 @@ class PL_AdaMatcher(pl.LightningModule):
         # if batch_idx % val_plot_interval == 0:
         #     figures = make_matching_figures(batch, self.config, mode=self.config.TRAINER.PLOT_MODE)
 
-        return {
+        validation_output = {
             **ret_dict,
             "loss_scalars": batch["loss_scalars"],
             # 'figures': figures,
         }
 
-    def on_validation_epoch_end(self, outputs):
+        self.validation_step_outputs.append(validation_output)
+
+        return validation_output
+
+    def on_validation_epoch_end(self):
         # handle multiple validation sets
+        outputs = self.validation_step_outputs
+
         multi_outputs = (
             [outputs] if not isinstance(outputs[0], (list, tuple)) else outputs
         )
@@ -473,6 +481,8 @@ class PL_AdaMatcher(pl.LightningModule):
             self.log(
                 f"auc@{thr}", torch.tensor(np.mean(multi_val_metrics[f"auc@{thr}"]))
             )
+
+        self.validation_step_outputs.clear()
             # ckpt monitors on this
         # for k, v in loss_scalars.items():
         #     self.log(k, v)
