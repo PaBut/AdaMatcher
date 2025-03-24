@@ -104,10 +104,7 @@ class PL_AdaMatcher(pl.LightningModule):
         batch_idx,
         optimizer,
         optimizer_idx,
-        optimizer_closure,
-        on_tpu,
-        using_native_amp,
-        using_lbfgs,
+        optimizer_closure
     ):
         # learning rate warm up
         # pdb.set_trace()
