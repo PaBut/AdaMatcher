@@ -487,7 +487,8 @@ class AdaMatcherLoss(nn.Module):
                 'loss': loss.clone().detach().cpu(),
             }
             data.update({'loss': loss, 'loss_scalars': loss_scalars})
-            logger.info(f"loss value: {loss}")
+        
+        logger.info(f"loss value: {loss}")
 
 
 class LoFTRLoss(nn.Module):
