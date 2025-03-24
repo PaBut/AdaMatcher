@@ -417,7 +417,7 @@ class PL_AdaMatcher(pl.LightningModule):
             # since pl performs sanity_check at the very beginning of the training
             cur_epoch = self.trainer.current_epoch
             if (
-                not self.trainer.resume_from_checkpoint
+                not self.trainer.ckpt_path
                 and self.trainer.running_sanity_check
             ):
                 cur_epoch = -1
