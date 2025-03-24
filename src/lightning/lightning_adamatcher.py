@@ -418,7 +418,7 @@ class PL_AdaMatcher(pl.LightningModule):
             cur_epoch = self.trainer.current_epoch
             if (
                 not self.trainer.ckpt_path
-                and self.trainer.running_sanity_check
+                and self.trainer.sanity_checking
             ):
                 cur_epoch = -1
 
