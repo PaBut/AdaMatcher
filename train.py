@@ -229,6 +229,7 @@ def main():
         enable_model_summary=True,
         # resume_from_checkpoint=args.ckpt_path,
         profiler=profiler,
+        enable_progress_bar=True,
         **trainer_params,
         # precision=16,
         # auto_lr_find=True
