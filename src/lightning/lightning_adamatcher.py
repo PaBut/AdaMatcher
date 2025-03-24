@@ -103,7 +103,6 @@ class PL_AdaMatcher(pl.LightningModule):
         epoch,
         batch_idx,
         optimizer,
-        optimizer_idx,
         optimizer_closure
     ):
         # learning rate warm up
