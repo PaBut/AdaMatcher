@@ -94,7 +94,6 @@ class PL_AdaMatcher(pl.LightningModule):
     def configure_optimizers(self):
         # FIXME: The scheduler did not work properly when `--resume_from_checkpoint`
         optimizer = build_optimizer(self, self.config)
-        logger.info(f"{len(optimizer.param_groups[0]["params"])}")
         scheduler = build_scheduler(self.config, optimizer)
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 

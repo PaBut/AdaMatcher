@@ -36,7 +36,6 @@ class RandomConcatSampler(Sampler):
                 'data_source should be torch.utils.data.ConcatDataset')
 
         self.data_source = data_source
-        logger.info(f"cumulative_size: {self.data_source.cumulative_sizes}")
         self.n_subset = len(self.data_source.datasets)
         self.n_samples_per_subset = n_samples_per_subset
         self.n_samples = self.n_subset * self.n_samples_per_subset * repeat

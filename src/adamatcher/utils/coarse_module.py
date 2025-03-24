@@ -69,7 +69,7 @@ def zeroshot_coarse_matching(feat_0, feat_1, data, mask_c0=None, mask_c1=None, t
         torch.cat((feat0[b_ids==i], feat_0[i]), dim=0),
         torch.cat((feat1[b_ids==i], feat_1[i]), dim=0)
     ) / temperature for i in range(znum)]
-    logger.info(f"sim_matrix: {[mat.shape for mat in sim_matrix]}, mask_c0: {mask_c0.shape}, mask_c1: {mask_c1.shape}")
+    # logger.info(f"sim_matrix: {[mat.shape for mat in sim_matrix]}, mask_c0: {mask_c0.shape}, mask_c1: {mask_c1.shape}")
     sim_matrix = [
         mat.masked_fill_(~(
                 torch.cat((m0.new_ones(n).bool(), m0))[:, None] *
@@ -483,7 +483,7 @@ class CoarseModule(nn.Module):
         self.bs = bs
         mask0_d8, mask1_d8 = data.get("mask0_d8", None), data.get("mask1_d8", None)
 
-        logger.info(f"{str(self.training)}, {str(data['zs'].sum())}")
+        # logger.info(f"{str(self.training)}, {str(data['zs'].sum())}")
 
         if data["zs"].sum() > 0:
             zeroshot_coarse_matching(mask_feat0, mask_feat1, data, mask0_d8, mask1_d8, temperature=0.1, sample_num=1000)
@@ -785,7 +785,7 @@ class CoarseModule(nn.Module):
             )
         )
 
-        logger.info(f"m_bids: {data['m_bids'].shape}")
+        # logger.info(f"m_bids: {data['m_bids'].shape}")
 
     @torch.no_grad()
     def dual_filter(self, data):

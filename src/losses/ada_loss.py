@@ -133,11 +133,11 @@ class AdaMatcherLoss(nn.Module):
     ):
 
         weight = self.set_weight(std0)
-        logger.info(f"weight: {weight.shape}")
+        # logger.info(f"weight: {weight.shape}")
         correct_mask = torch.norm(gt_r_w_pt1, p=float('inf'), dim=1) < 1.0
-        logger.info(f"correct_mask: {correct_mask.shape}")
-        logger.info(f"r_w_pt1: {r_w_pt1.shape}")
-        logger.info(f"gt_r_w_pt1: {gt_r_w_pt1.shape}")
+        # logger.info(f"correct_mask: {correct_mask.shape}")
+        # logger.info(f"r_w_pt1: {r_w_pt1.shape}")
+        # logger.info(f"gt_r_w_pt1: {gt_r_w_pt1.shape}")
         self.fine_v_num += correct_mask.sum().float().cpu()
         if not correct_mask.any():
             if (
@@ -355,7 +355,7 @@ class AdaMatcherLoss(nn.Module):
             else:
                 gt_pt0_l2 = data["zs_pt0_f_float"][b_ids0_l1]
             pt0 = data['kpts0_l2']  # * s0_l2
-            logger.info(f"gt_pt0_l2: {gt_pt0_l2.shape}, pt0: {pt0.shape}")
+            # logger.info(f"gt_pt0_l2: {gt_pt0_l2.shape}, pt0: {pt0.shape}")
             p_mask0 = (pt0 == gt_pt0_l2).all(-1)
             pt0, gt_pt0_l2, b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
                 pt0[p_mask0],
@@ -405,7 +405,7 @@ class AdaMatcherLoss(nn.Module):
                 gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
             else:
                 gt_pt1_l2 = data["zs_pt1_f_float"][b_ids1_l1]
-            logger.info(f"gt_pt1_l2: {gt_pt1_l2.shape}, pt1: {pt1.shape}")
+            # logger.info(f"gt_pt1_l2: {gt_pt1_l2.shape}, pt1: {pt1.shape}")
             p_mask1 = (pt1 == gt_pt1_l2).all(-1)
             pt1, gt_pt1_l2, b_ids1_l1, i_ids1_l1, j_ids1_l1 = (
                 pt1[p_mask1],
@@ -417,7 +417,7 @@ class AdaMatcherLoss(nn.Module):
 
             w_pt1 = data['kpts0from1_l2'][p_mask1]  # * s0_l2
             r_w_pt1 = data['relative_kpts0from1_l2']#[p_mask1]
-            logger.info(f"r_w_pt1: {r_w_pt1.shape}")
+            # logger.info(f"r_w_pt1: {r_w_pt1.shape}")
             patch0_center_coord = data['patch0_center_coord_l2'][p_mask1]
             std0 = data['std0']#[p_mask1]
             

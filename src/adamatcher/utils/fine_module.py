@@ -112,7 +112,7 @@ class FineModule(nn.Module):
         # compute coordinates from heatmap
         relative_kpts0from1 = dsnt.spatial_expectation2d(heatmap[None],
                                                          True)[0]  # [M, 2]
-        logger.info("relative_kpts0from1 shape: {}".format(str(relative_kpts0from1.shape)))
+        # logger.info("relative_kpts0from1 shape: {}".format(str(relative_kpts0from1.shape)))
         kpts0_from1_l2 = patch0_center_coord_l2 + relative_kpts0from1 * (
             W // 2)  # (W // 2)
 
@@ -121,12 +121,12 @@ class FineModule(nn.Module):
                                           True, heatmap.device).reshape(
                                               1, -1, 2)  # [1, NWW, 2]
         
-        logger.info("heatmap shape: {}".format(str(heatmap.shape)))
+        # logger.info("heatmap shape: {}".format(str(heatmap.shape)))
 
         var = (
             torch.sum(grid_normalized**2 * heatmap.view(-1, NWW, 1), dim=1) -
             relative_kpts0from1**2)#[m_bids]  # [M, 2]
-        logger.info("var shape: {}".format(str(var.shape)))
+        # logger.info("var shape: {}".format(str(var.shape)))
         std = torch.sum(torch.sqrt(torch.clamp(var, min=1e-10)),
                         -1)  # [M]  clamp needed for numerical stability
 
@@ -136,7 +136,7 @@ class FineModule(nn.Module):
         M, WW, C = feat_f0.shape
         Nz = len(data['zs_b_ids']) if 'zs_b_ids' in data else 0
         Ng = len(data['b_ids']) if 'b_ids' in data else 0
-        logger.info(f"Nz, Ng: {Nz}, {Ng}")
+        # logger.info(f"Nz, Ng: {Nz}, {Ng}")
         pt0_f_int = data['zs_pt0_f_int']
         pt0_f_float = data['zs_pt0_f_float']  # (Nz, 2) in hw_f coordinates
         pt_x = (pt0_f_float[:, 0] - pt0_f_int[:, 0]) / radius
@@ -153,6 +153,7 @@ class FineModule(nn.Module):
 
         return heatmap_z
 
+    @torch.no_grad()
     def spvc_zeroshot_fine(self, radius, data):
         pt1_f_int = data['zs_pt1_f_int']
         pt1_f_float = data['zs_pt1_f_float']
@@ -214,7 +215,7 @@ class FineModule(nn.Module):
             zs = data['zs']
             pt0_i = data['zs_pt0_i']
             pt1_i = data['zs_pt1_i']
-            logger.info(f"pt0_i, pt1_i: {pt0_i.shape}, {pt1_i.shape}")
+            # logger.info(f"pt0_i, pt1_i: {pt0_i.shape}, {pt1_i.shape}")
             zs_b_ids = data['zs_b_ids']
             scale_c = data['hw0_i'][0] / data['hw0_c'][0]  # 8.0
             scale_f = data['hw0_i'][0] / data['hw0_f'][0]  # 2.0
@@ -309,13 +310,13 @@ class FineModule(nn.Module):
                     #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
                     #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
 
-                    logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, , {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
+                    # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, , {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
 
                     bs_feat_c = self.down_proj(
                         torch.cat(feat_d8, dim=0)
                     )  # [2n, 2c->c]
 
-                    logger.info(f"bs_feat_c: {bs_feat_c.shape}")
+                    # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
                     
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
@@ -334,12 +335,12 @@ class FineModule(nn.Module):
                     bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
                                                                    2,
                                                                    dim=0)
-                    logger.info(f"1) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
+                    # logger.info(f"1) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
                     ###########################################################################
                     bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
                         bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)   
 
-                    logger.info(f"2) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
+                    # logger.info(f"2) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
 
                     heatmap_zs = None
                     if data["zs"].sum() > 0:
@@ -416,8 +417,8 @@ class FineModule(nn.Module):
                         torch.cat(feat_d8, dim=0)
                     )  # [2n, 2c->c]
 
-                    logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
-                    logger.info(f"bs_feat_c: {bs_feat_c.shape}")
+                    # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
+                    # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
                     
                     bs_feat_cf = self.merge_feat(
                         torch.cat(
@@ -500,9 +501,9 @@ class FineModule(nn.Module):
             torch.cat(j_ids1_l2, dim=0) if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
         })
-        logger.info(f"relative_kpts0from1_l2: {data['relative_kpts0from1_l2'].shape}")
+        # logger.info(f"relative_kpts0from1_l2: {data['relative_kpts0from1_l2'].shape}")
         if len(b_ids1_l1):
-            logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
+            # logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
             pts0.append(data['kpts0from1_l2'])
             pts1.append(data['kpts1_l2'])
 
@@ -532,9 +533,9 @@ class FineModule(nn.Module):
             torch.cat(j_ids0_l2, dim=0) if len(b_ids0_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
         })
-        logger.info(f"std0: {data['std0'].shape}, std1: {data['std1'].shape}")
+        # logger.info(f"std0: {data['std0'].shape}, std1: {data['std1'].shape}")
         if len(b_ids0_l1):
-            logger.info(f"kpts0_l2, kpts1from0_l2: {data['kpts0_l2'].shape}, {data['kpts1from0_l2'].shape}")
+            # logger.info(f"kpts0_l2, kpts1from0_l2: {data['kpts0_l2'].shape}, {data['kpts1from0_l2'].shape}")
             pts1.append(data['kpts1from0_l2'])
             pts0.append(data['kpts0_l2'])
 
@@ -554,7 +555,7 @@ class FineModule(nn.Module):
         else:
             scale1_l2 = scale0_l2 = 0.0
 
-        logger.info(f"pts0, pts1: {pts0.shape}, {pts1.shape}")
+        # logger.info(f"pts0, pts1: {pts0.shape}, {pts1.shape}")
 
         if data["zs"].sum() > 0:
             data.update({
