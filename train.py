@@ -240,7 +240,7 @@ def main():
     loguru_logger.info(f"Start training!")
     # loguru_logger.info(f"{len(trainer.strategy.optimizers[0].param_groups)}")
 
-    trainer.fit(model, datamodule=data_module, ckpt_path=args.ckpt_path)
+    trainer.fit(model, datamodule=data_module)
 
 
 if __name__ == "__main__":
