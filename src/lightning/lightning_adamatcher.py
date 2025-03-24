@@ -80,6 +80,9 @@ class PL_AdaMatcher(pl.LightningModule):
             weights = torch.load(pretrained_ckpt, map_location="cpu", weights_only=False)["state_dict"]
             logger.info(f"{optimizer_state[0]["param_groups"][0]["params"]}")
             logger.info(f"{len(optimizer_state[0]["param_groups"])}")
+            logger.info(f"{len(weights.keys())}")
+            logger.info(f"{len(self.matcher.state_dict().keys())}")
+            logger.info(f"{list(self.matcher.state_dict().keys())[199:210]}")
             logger.info(f"{sum(p.numel() for p in weights.values())}")
             logger.info(f"{sum(p.numel() for p in self.matcher.parameters())}")
             # self.matcher.load_state_dict({k.replace('matcher.', ''): v for k, v in weights.items()})
@@ -142,8 +145,9 @@ class PL_AdaMatcher(pl.LightningModule):
 
     def _trainval_inference(self, batch):
 
-        with self.profiler.profile("Compute coarse supervision"):
-            compute_supervision_coarse(batch, self.config)
+        if batch["gt"].sum() > 0:
+            with self.profiler.profile("Compute coarse supervision"):
+                compute_supervision_coarse(batch, self.config)
 
         with self.profiler.profile("AdaMatcher"):
             self.matcher(batch)
