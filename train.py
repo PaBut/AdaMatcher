@@ -11,7 +11,7 @@ from pytorch_lightning.strategies import DDPStrategy
 import numpy as np
 import pytorch_lightning as pl
 from loguru import logger as loguru_logger
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint, TQDMProgressBar
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities import rank_zero_only
 
