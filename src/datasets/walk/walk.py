@@ -480,7 +480,7 @@ class WALKDataset(Dataset):
                 right = torch.matmul(right, M.t())
                 right = right[:, :2] / right[:, [2]]
                 # define affine transformation
-                perspective = partial(K.geometry.warp_perspective, M=M[None], dsize=(h, w), flags='bilinear')
+                perspective = partial(K.geometry.warp_perspective, M=M[None], dsize=(h, w), mode='bilinear')
                 # apply homography on mask1
                 mask1 = perspective(src=mask1[None, None].float())[0, 0].bool()
                 # apply homography on color1
