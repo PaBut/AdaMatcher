@@ -193,7 +193,7 @@ def main():
     )
 
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    callbacks = [lr_monitor]
+    callbacks = [lr_monitor, TQDMProgressBar(leave=True)]
     if not args.disable_ckpt:
         callbacks.append(ckpt_callback)
 
