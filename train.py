@@ -6,7 +6,7 @@ import pprint
 from distutils.util import strtobool
 from pathlib import Path
 
-from pytorch_lightning.strategies import DDPStrategy
+from pytorch_lightning.strategies import SingleDeviceStrategy
 
 import numpy as np
 import pytorch_lightning as pl
@@ -219,7 +219,10 @@ def main():
         #     # sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
         # ),
         # strategy=DDPPlugin(find_unused_parameters=False)
-        strategy="single_device",
+        strategy=SingleDeviceStrategy(
+            device="gpu",
+            accelerator="cuda"
+        ),
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
         logger=logger,
