@@ -90,6 +90,8 @@ class PL_AdaMatcher(pl.LightningModule):
         self.metric_time = 0.0
 
         self.validation_step_outputs = []
+        self.train_step_outputs = []
+        self.test_step_outputs = []
 
     def configure_optimizers(self):
         # FIXME: The scheduler did not work properly when `--resume_from_checkpoint`
@@ -215,14 +217,21 @@ class PL_AdaMatcher(pl.LightningModule):
             for k, v in batch["loss_scalars"].items():
                 self.log(k, v, prog_bar=True, logger=True, on_step=True, on_epoch=True)
 
-        return {"loss": batch["loss"], "loss_scalars": batch["loss_scalars"]}
+        result = {"loss": batch["loss"], "loss_scalars": batch["loss_scalars"]}
 
-    def on_train_epoch_end(self, outputs):
+        self.train_step_outputs.append(result)
+
+        return result
+
+    def on_train_epoch_end(self):
+        outputs = self.train_step_outputs
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
         if self.trainer.global_rank == 0:
             self.logger.experiment.add_scalar(
                 "train/avg_loss_on_epoch", avg_loss, global_step=self.current_epoch
             )
+
+        self.train_step_outputs.clear()
 
     def validation_step(self, batch, batch_idx):
         with torch.no_grad():
@@ -419,16 +428,17 @@ class PL_AdaMatcher(pl.LightningModule):
 
             # 1. loss_scalars: dict of list, on cpu
             _loss_scalars = [o["loss_scalars"] for o in outputs]
-            loss_scalars = {
-                k: torch.stack(
-                    flattenList(all_gather([_ls[k] for _ls in _loss_scalars]))
-                ).mean()
-                for k in _loss_scalars[0]
-            }
+            # loss_scalars = {
+            #     k: torch.stack(
+            #         flattenList(all_gather([_ls[k] for _ls in _loss_scalars]))
+            #     ).mean()
+            #     for k in _loss_scalars[0]
+            # }
             # for k, v in loss_scalars.items():
             #     print(k, v)
-            # for k, v in loss_scalars.items():
-            #     loss_scalars[k] = torch.stack(loss_scalars[k]).mean()
+            loss_scalars = {}
+            for k, v in _loss_scalars.items():
+                loss_scalars[k] = torch.stack(_loss_scalars[k]).mean()
 
             # 2. val metrics: dict of list, numpy
             _metrics = [o["metrics"] for o in outputs]
@@ -525,10 +535,13 @@ class PL_AdaMatcher(pl.LightningModule):
                     dumps.append(item)
                 ret_dict["dumps"] = dumps
 
+        self.test_step_outputs.append(ret_dict)
+
         return ret_dict
 
     def test_epoch_end(self, outputs):
         # metrics: dict of list, numpy
+        outputs = self.test_step_outputs
         _metrics = [o["metrics"] for o in outputs]
         metrics = {
             k: flattenList(gather(flattenList([_me[k] for _me in _metrics])))
@@ -554,3 +567,4 @@ class PL_AdaMatcher(pl.LightningModule):
                 np.save(Path(self.dump_dir) / "Ada_pred_eval", dumps)
         # print(self.matcher.bb_time/2000., self.matcher.ficas_time/2000., self.matcher.coarse_time/2000., self.matcher.refine_time/2000., self.matcher.all_t/2000., self.matcher.n, self.all_time/2000., self.metric_time/2000.)
         # print(self.min_memory, self.max_memory)
+        self.test_step_outputs.clear()
