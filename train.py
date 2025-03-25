@@ -221,7 +221,6 @@ def main():
         # strategy=DDPPlugin(find_unused_parameters=False)
         strategy=SingleDeviceStrategy(
             device="cuda",
-            accelerator="cuda"
         ),
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
