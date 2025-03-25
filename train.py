@@ -199,7 +199,7 @@ def main():
 
     trainer_params = {
         "accelerator": args.accelerator,
-        "devices": -1,  # Maps 'gpus' to 'devices'
+        "devices": 1,  # Maps 'gpus' to 'devices'
         "num_nodes": args.num_nodes,
         "max_epochs": args.max_epochs,
         "check_val_every_n_epoch": args.check_val_every_n_epoch,
