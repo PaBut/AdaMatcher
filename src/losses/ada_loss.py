@@ -3,6 +3,8 @@ import pdb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.distributed as dist
+
 from einops import rearrange
 from fvcore.nn import sigmoid_focal_loss_jit
 from loguru import logger
@@ -488,7 +490,7 @@ class AdaMatcherLoss(nn.Module):
             }
             data.update({'loss': loss, 'loss_scalars': loss_scalars})
         
-        logger.info(f"[{torch.dist.get_rank()}]loss value: {loss}")
+        logger.info(f"[{dist.get_rank()}]loss value: {loss}")
 
 
 class LoFTRLoss(nn.Module):
