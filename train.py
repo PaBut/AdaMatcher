@@ -14,6 +14,7 @@ from loguru import logger as loguru_logger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint, TQDMProgressBar
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.utilities import rank_zero_only
+import torch
 
 from src.config.default import get_cfg_defaults
 from src.lightning.data import MultiSceneDataModule
@@ -220,7 +221,7 @@ def main():
         # ),
         # strategy=DDPPlugin(find_unused_parameters=False)
         strategy=SingleDeviceStrategy(
-            device="cuda",
+            device=torch.device("cuda"),
         ),
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
