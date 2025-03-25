@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 from einops.einops import rearrange
 from loguru import logger
@@ -74,7 +75,8 @@ class PL_AdaMatcher(pl.LightningModule):
 
         # Pretrained weights
         if pretrained_ckpt:
-            weights = torch.load(pretrained_ckpt, map_location="cpu")["state_dict"]
+            torch.serialization.add_safe_globals([ModelCheckpoint])
+            weights = torch.load(pretrained_ckpt, map_location="cpu", weights_only=False)["state_dict"]
             # self.matcher.load_state_dict({k.replace('matcher.', ''): v for k, v in weights.items()})
             self.load_state_dict(weights)
             logger.info(f"Load '{pretrained_ckpt}' as pretrained checkpoint")
@@ -87,22 +89,22 @@ class PL_AdaMatcher(pl.LightningModule):
         self.all_time = 0.0
         self.metric_time = 0.0
 
+        self.validation_step_outputs = []
+        self.train_step_outputs = []
+        self.test_step_outputs = []
+
     def configure_optimizers(self):
         # FIXME: The scheduler did not work properly when `--resume_from_checkpoint`
         optimizer = build_optimizer(self, self.config)
         scheduler = build_scheduler(self.config, optimizer)
-        return [optimizer], [scheduler]
+        return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
     def optimizer_step(
         self,
         epoch,
         batch_idx,
         optimizer,
-        optimizer_idx,
-        optimizer_closure,
-        on_tpu,
-        using_native_amp,
-        using_lbfgs,
+        optimizer_closure
     ):
         # learning rate warm up
         # pdb.set_trace()
@@ -211,14 +213,21 @@ class PL_AdaMatcher(pl.LightningModule):
             for k, v in batch["loss_scalars"].items():
                 self.log(k, v, prog_bar=True, logger=True, on_step=True, on_epoch=True)
 
-        return {"loss": batch["loss"], "loss_scalars": batch["loss_scalars"]}
+        result = {"loss": batch["loss"], "loss_scalars": batch["loss_scalars"]}
 
-    def training_epoch_end(self, outputs):
+        self.train_step_outputs.append(result)
+
+        return result
+
+    def on_train_epoch_end(self):
+        outputs = self.train_step_outputs
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
         if self.trainer.global_rank == 0:
             self.logger.experiment.add_scalar(
                 "train/avg_loss_on_epoch", avg_loss, global_step=self.current_epoch
             )
+
+        self.train_step_outputs.clear()
 
     def validation_step(self, batch, batch_idx):
         with torch.no_grad():
@@ -385,14 +394,20 @@ class PL_AdaMatcher(pl.LightningModule):
         # if batch_idx % val_plot_interval == 0:
         #     figures = make_matching_figures(batch, self.config, mode=self.config.TRAINER.PLOT_MODE)
 
-        return {
+        validation_output = {
             **ret_dict,
             "loss_scalars": batch["loss_scalars"],
             # 'figures': figures,
         }
 
-    def validation_epoch_end(self, outputs):
+        self.validation_step_outputs.append(validation_output)
+
+        return validation_output
+
+    def on_validation_epoch_end(self):
         # handle multiple validation sets
+        outputs = self.validation_step_outputs
+
         multi_outputs = (
             [outputs] if not isinstance(outputs[0], (list, tuple)) else outputs
         )
@@ -402,8 +417,8 @@ class PL_AdaMatcher(pl.LightningModule):
             # since pl performs sanity_check at the very beginning of the training
             cur_epoch = self.trainer.current_epoch
             if (
-                not self.trainer.resume_from_checkpoint
-                and self.trainer.running_sanity_check
+                not self.trainer.ckpt_path
+                and self.trainer.sanity_checking
             ):
                 cur_epoch = -1
 
@@ -417,8 +432,9 @@ class PL_AdaMatcher(pl.LightningModule):
             }
             # for k, v in loss_scalars.items():
             #     print(k, v)
-            # for k, v in loss_scalars.items():
-            #     loss_scalars[k] = torch.stack(loss_scalars[k]).mean()
+            # loss_scalars = {}
+            # for k, v in _loss_scalars.items():
+            #     loss_scalars[k] = torch.stack(_loss_scalars[k]).mean()
 
             # 2. val metrics: dict of list, numpy
             _metrics = [o["metrics"] for o in outputs]
@@ -466,6 +482,8 @@ class PL_AdaMatcher(pl.LightningModule):
             self.log(
                 f"auc@{thr}", torch.tensor(np.mean(multi_val_metrics[f"auc@{thr}"]))
             )
+
+        self.validation_step_outputs.clear()
             # ckpt monitors on this
         # for k, v in loss_scalars.items():
         #     self.log(k, v)
@@ -513,10 +531,13 @@ class PL_AdaMatcher(pl.LightningModule):
                     dumps.append(item)
                 ret_dict["dumps"] = dumps
 
+        self.test_step_outputs.append(ret_dict)
+
         return ret_dict
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
         # metrics: dict of list, numpy
+        outputs = self.test_step_outputs
         _metrics = [o["metrics"] for o in outputs]
         metrics = {
             k: flattenList(gather(flattenList([_me[k] for _me in _metrics])))
@@ -542,3 +563,4 @@ class PL_AdaMatcher(pl.LightningModule):
                 np.save(Path(self.dump_dir) / "Ada_pred_eval", dumps)
         # print(self.matcher.bb_time/2000., self.matcher.ficas_time/2000., self.matcher.coarse_time/2000., self.matcher.refine_time/2000., self.matcher.all_t/2000., self.matcher.n, self.all_time/2000., self.metric_time/2000.)
         # print(self.min_memory, self.max_memory)
+        self.test_step_outputs.clear()
