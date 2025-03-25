@@ -374,19 +374,19 @@ class MultiSceneDataModule(pl.LightningDataModule):
         logger.info(
             f'[rank:{self.rank}/{self.world_size}]: Train Sampler and DataLoader re-init (should not re-init between epochs!).'
         )
-        if self.data_sampler == 'scene_balance':
-            sampler = RandomConcatSampler(
-                self.train_dataset,
-                self.n_samples_per_subset,
-                self.subset_replacement,
-                self.shuffle,
-                self.repeat,
-                self.seed,
-            )
-        else:
-            sampler = None
+        # if self.data_sampler == 'scene_balance':
+        #     sampler = RandomConcatSampler(
+        #         self.train_dataset,
+        #         self.n_samples_per_subset,
+        #         self.subset_replacement,
+        #         self.shuffle,
+        #         self.repeat,
+        #         self.seed,
+        #     )
+        # else:
+        #     sampler = None
         dataloader = DataLoader(self.train_dataset,
-                                sampler=sampler,
+                                # sampler=sampler,
                                 **self.train_loader_params)
         return dataloader
 
@@ -396,17 +396,17 @@ class MultiSceneDataModule(pl.LightningDataModule):
             f'[rank:{self.rank}/{self.world_size}]: Val Sampler and DataLoader re-init.'
         )
         if not isinstance(self.val_dataset, abc.Sequence):
-            sampler = DistributedSampler(self.val_dataset, shuffle=False)
+            # sampler = DistributedSampler(self.val_dataset, shuffle=False)
             return DataLoader(self.val_dataset,
-                              sampler=sampler,
+                            #   sampler=sampler,
                               **self.val_loader_params)
         else:
             dataloaders = []
             for dataset in self.val_dataset:
-                sampler = DistributedSampler(dataset, shuffle=False)
+                # sampler = DistributedSampler(dataset, shuffle=False)
                 dataloaders.append(
                     DataLoader(dataset,
-                               sampler=sampler,
+                            #    sampler=sampler,
                                **self.val_loader_params))
             return dataloaders
 
@@ -414,13 +414,13 @@ class MultiSceneDataModule(pl.LightningDataModule):
         logger.info(
             f'[rank:{self.rank}/{self.world_size}]: Test Sampler and DataLoader re-init.'
         )
-        sampler = DistributedSampler(self.test_dataset, shuffle=False)
+        # sampler = DistributedSampler(self.test_dataset, shuffle=False)
         # sampler = RandomConcatSampler(self.test_dataset,
         #                               self.n_samples_per_subset,
         #                               self.subset_replacement,
         #                               self.shuffle, self.repeat, self.seed)
         return DataLoader(self.test_dataset,
-                          sampler=sampler,
+                        #   sampler=sampler,
                           **self.test_loader_params)
 
 
