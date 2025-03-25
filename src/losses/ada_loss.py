@@ -490,7 +490,7 @@ class AdaMatcherLoss(nn.Module):
             }
             data.update({'loss': loss, 'loss_scalars': loss_scalars})
         
-        logger.info(f"[{dist.get_rank()}]loss value: {loss}")
+        logger.info(f"[{dist.get_rank()}][{self.training}]loss value: {loss}")
 
 
 class LoFTRLoss(nn.Module):
