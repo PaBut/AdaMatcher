@@ -430,7 +430,7 @@ class PL_AdaMatcher(pl.LightningModule):
             _loss_scalars = [o["loss_scalars"] for o in outputs]
             loss_scalars = {
                 k: torch.stack(
-                    flattenList(all_gather([_ls[k] for _ls in _loss_scalars]))
+                    flattenList([_ls[k] for _ls in _loss_scalars])
                 ).mean()
                 for k in _loss_scalars[0]
             }
@@ -443,7 +443,7 @@ class PL_AdaMatcher(pl.LightningModule):
             # 2. val metrics: dict of list, numpy
             _metrics = [o["metrics"] for o in outputs]
             metrics = {
-                k: flattenList(all_gather(flattenList([_me[k] for _me in _metrics])))
+                k: flattenList([_me[k] for _me in _metrics])
                 for k in _metrics[0]
             }
             logger.info(f"{metrics}")

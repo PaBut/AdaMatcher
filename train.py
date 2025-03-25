@@ -219,7 +219,7 @@ def main():
         #     # sync_batchnorm=config.TRAINER.WORLD_SIZE > 0,
         # ),
         # strategy=DDPPlugin(find_unused_parameters=False)
-        strategy="ddp",
+        strategy="single_device",
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
         logger=logger,
