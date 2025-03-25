@@ -557,7 +557,7 @@ class FineModule(nn.Module):
 
         # logger.info(f"pts0, pts1: {pts0.shape}, {pts1.shape}")
 
-        if data["zs"].sum() > 0:
+        if data["zs"].sum() > 0 and "expec_f_zs" in data:
             data.update({
                 "expec_f_zs": data["expec_f_zs"][m_bids]
             })
