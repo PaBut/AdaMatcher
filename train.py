@@ -221,7 +221,7 @@ def main():
         # ),
         # strategy=DDPPlugin(find_unused_parameters=False)
         strategy=SingleDeviceStrategy(
-            device=torch.device("cuda"),
+            device=torch.device("cuda:0"),
         ),
         gradient_clip_val=config.TRAINER.GRADIENT_CLIPPING,
         callbacks=callbacks,
