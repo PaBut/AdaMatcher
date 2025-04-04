@@ -33,7 +33,8 @@ class MultiSceneDataModule(pl.LightningDataModule):
 
         # 1. data config
         # Train and Val should from the same data source
-        self.trainval_data_source = config.DATASET.TRAINVAL_DATA_SOURCE
+        self.train_data_source = config.DATASET.TRAIN_DATA_SOURCE
+        self.val_data_source = config.DATASET.VAL_DATA_SOURCE
         self.test_data_source = config.DATASET.TEST_DATA_SOURCE
         # training and validating
         self.train_data_root = config.DATASET.TRAIN_DATA_ROOT
@@ -131,6 +132,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 self.train_list_path,
                 self.train_intrinsic_path,
                 mode='train',
+                data_source=self.train_data_source,
                 min_overlap_score=self.min_overlap_score_train,
                 pose_dir=self.train_pose_root,
                 dcfg=self.dataset_cfg.TRAIN
@@ -152,6 +154,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                             npz_list,
                             self.val_intrinsic_path,
                             mode='val',
+                            data_source=self.val_data_source,
                             min_overlap_score=self.min_overlap_score_test,
                             pose_dir=self.val_pose_root,
                             dcfg=self.dataset_cfg.VALID
@@ -163,6 +166,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                     self.val_list_path,
                     self.val_intrinsic_path,
                     mode='val',
+                    data_source=self.val_data_source,
                     min_overlap_score=self.min_overlap_score_test,
                     pose_dir=self.val_pose_root,
                     dcfg=self.dataset_cfg.VALID
@@ -175,6 +179,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 self.test_list_path,
                 self.test_intrinsic_path,
                 mode='test',
+                data_source=self.test_data_source,
                 min_overlap_score=self.min_overlap_score_test,
                 pose_dir=self.test_pose_root,
                 dcfg=self.dataset_cfg.TEST
@@ -187,6 +192,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         split_npz_root,
         scene_list_path,
         intri_path,
+        data_source,
         mode='train',
         min_overlap_score=0.0,
         pose_dir=None,
@@ -214,6 +220,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
             split_npz_root,
             intri_path,
             mode=mode,
+            data_source=data_source,
             min_overlap_score=min_overlap_score,
             max_resize=self.max_resize,
             max_samples=self.max_samples,
@@ -230,14 +237,15 @@ class MultiSceneDataModule(pl.LightningDataModule):
         mode,
         max_resize,
         max_samples,
+        data_source,
         min_overlap_score=0.0,
         pose_dir=None,
         dcfg=None,
     ):
         datasets = []
         augment_fn = self.augment_fn if mode == 'train' else None
-        data_source = (self.trainval_data_source
-                       if mode in ['train', 'val'] else self.test_data_source)
+        # data_source = (self.trainval_data_source
+        #                if mode in ['train', 'val'] else self.test_data_source)
         if str(data_source).lower() == 'megadepth':
             npz_names = [f'{n}.npz' for n in npz_names]
 
@@ -301,13 +309,14 @@ class MultiSceneDataModule(pl.LightningDataModule):
         mode,
         max_resize,
         max_samples,
+        data_source,
         min_overlap_score=0.0,
         pose_dir=None,
         dcfg=None,
     ):
         augment_fn = self.augment_fn if mode == 'train' else None
-        data_source = (self.trainval_data_source
-                       if mode in ['train', 'val'] else self.test_data_source)
+        # data_source = (self.trainval_data_source
+        #                if mode in ['train', 'val'] else self.test_data_source)
         if str(data_source).lower() == 'megadepth':
             npz_names = [f'{n}.npz' for n in npz_names]
         with tqdm_joblib(
