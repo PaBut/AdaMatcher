@@ -211,9 +211,7 @@ def read_bin(path):
             byte = fid.read(1)
         array = np.fromfile(fid, np.float32)
     array = array.reshape((width, height, channels), order="F")
-    transposed = np.transpose(array, (1, 0, 2)).squeeze()
-
-    return cv2.cvtColor(transposed, cv2.COLOR_BGR2GRAY)
+    return np.transpose(array, (1, 0, 2)).squeeze()
 
 def read_megadepth_depth(path, pad_to=None):
     if str(path).endswith('.jpg'):
