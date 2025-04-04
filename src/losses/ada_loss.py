@@ -352,7 +352,6 @@ class AdaMatcherLoss(nn.Module):
             data['i_ids0_l1'],
             data['j_ids0_l1'],
         )
-        logger.info(f"b_ids0_l1: {b_ids0_l1.shape}, i_ids0_l1: {i_ids0_l1.shape}, j_ids0_l1: {j_ids0_l1.shape}")
         if len(b_ids0_l1) > 0:
             if data["gt"].sum() > 0:
                 gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1]
@@ -368,6 +367,7 @@ class AdaMatcherLoss(nn.Module):
                 i_ids0_l1[p_mask0],
                 j_ids0_l1[p_mask0],
             )
+            logger.info(f"b_ids0_l1: {b_ids0_l1.shape}, i_ids0_l1: {i_ids0_l1.shape}, j_ids0_l1: {j_ids0_l1.shape}")
 
             w_pt0 = data['kpts1from0_l2'][p_mask0]  # * s1_l2
             if data["gt"].sum() > 0:
