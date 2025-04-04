@@ -625,6 +625,7 @@ class FineModule(nn.Module):
         })
         # logger.info(f"std0: {data['std0'].shape}, std1: {data['std1'].shape}")
         if len(b_ids0_l1):
+            logger.info(f"relative_kpts1from0_l2: {data['relative_kpts1from0_l2'].shape}")
             # logger.info(f"kpts0_l2, kpts1from0_l2: {data['kpts0_l2'].shape}, {data['kpts1from0_l2'].shape}")
             pts1.append(data['kpts1from0_l2'])
             pts0.append(data['kpts0_l2'])
