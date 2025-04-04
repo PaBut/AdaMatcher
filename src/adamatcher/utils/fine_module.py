@@ -65,9 +65,7 @@ class FineModule(nn.Module):
                           kptsfeat0_from1,
                           patch0_center_coord_l2,
                           scale,
-                          flag=False,
-                          heatmap_zs=None,
-                          m_bids=None):
+                          flag=False):
         """
         kptsfeat1:       [k, ww, c]
         kptsfeat0_from1: [k, ww, c]
@@ -284,81 +282,127 @@ class FineModule(nn.Module):
                 bs_kpts0from1_l1 = kpts0from1_l1[bs_mask]
 
                 if len(bs_j_ids1_l1) > 0:
-                    # level2 kpts
-                    bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
-                    # bs_kpts1_l2 = pt0_f_int
-                    # bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
-                    bs_patch0_center_coord_l2 = data["zs_pt0_f_float"]
-
-                    # fine level feature
-                    bs_kptsfeat1 = feat_map1_unfold[bs_b_ids1_l1,
-                                                    bs_j_ids1_l1].flatten(
-                                                        1, 2)  # [k, ww, c]
-                    bs_kptsfeat0_from1 = feat_map0_unfold[
-                        bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
-                                                            2)  # [k, nwnw, c]
-                    feat_d8 = [
-                        # feat_f0_z,
-                        # feat_f1_z
-
-                        data['zs_feat_c0'],
-                        data['zs_feat_c1']
-                    ]
-                    # if data["zs"].sum() > 0:
-                    #     # feat_d8.append(feat_f0_z.flatten(1, 2))
-                    #     # feat_d8.append(feat_f1_z.flatten(1, 2))
-                    #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
-                    #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
-
-                    # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, , {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
-
-                    bs_feat_c = self.down_proj(
-                        torch.cat(feat_d8, dim=0)
-                    )  # [2n, 2c->c]
-
-                    # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
-                    
-                    bs_feat_cf = self.merge_feat(
-                        torch.cat(
-                            [
-                                # torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
-                                #           0),
-                                torch.cat([
-                                    feat_f0_z,
-                                    feat_f1_z
-                                ], dim=0),  # [n+m+n+m, ww, cf]
-                                repeat(
-                                    bs_feat_c, 'n c -> n ww c', ww=self.W**2),
-                            ],
-                            -1,
-                        ))
-                    bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
-                                                                   2,
-                                                                   dim=0)
-                    # logger.info(f"1) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
-                    ###########################################################################
-                    bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
-                        bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)   
-
-                    # logger.info(f"2) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
-
-                    heatmap_zs = None
                     if data["zs"].sum() > 0:
-                        heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat0_from1, bs_kptsfeat1, radius, W, data)
+                        # level2 kpts
+                        bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
+                        # bs_kpts1_l2 = pt0_f_int
+                        # bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
+                        bs_patch0_center_coord_l2 = data["zs_pt0_f_float"]
 
-                    (
-                        bs_relative_kpts0from1_l2,
-                        bs_kpts0from1_l2,
-                        bs_std0,
-                    ) = self.get_expected_locs(
-                        bs_kptsfeat1,
-                        bs_kptsfeat0_from1,
-                        bs_patch0_center_coord_l2,
-                        o_scale0,
-                        flag=self.post_scale,
-                        heatmap_zs=heatmap_zs,
-                        m_bids=m_bids
-                    )
+                        # fine level feature
+                        bs_kptsfeat1 = feat_map1_unfold[bs_b_ids1_l1,
+                                                        bs_j_ids1_l1].flatten(
+                                                            1, 2)  # [k, ww, c]
+                        bs_kptsfeat0_from1 = feat_map0_unfold[
+                            bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
+                                                                2)  # [k, nwnw, c]
+                        feat_d8 = [
+                            # feat_f0_z,
+                            # feat_f1_z
+
+                            data['zs_feat_c0'],
+                            data['zs_feat_c1']
+                        ]
+                        # if data["zs"].sum() > 0:
+                        #     # feat_d8.append(feat_f0_z.flatten(1, 2))
+                        #     # feat_d8.append(feat_f1_z.flatten(1, 2))
+                        #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
+                        #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
+
+                        # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, , {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
+
+                        bs_feat_c = self.down_proj(
+                            torch.cat(feat_d8, dim=0)
+                        )  # [2n, 2c->c]
+
+                        # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
+                        
+                        bs_feat_cf = self.merge_feat(
+                            torch.cat(
+                                [
+                                    # torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
+                                    #           0),
+                                    torch.cat([
+                                        feat_f0_z,
+                                        feat_f1_z
+                                    ], dim=0),  # [n+m+n+m, ww, cf]
+                                    repeat(
+                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
+                                ],
+                                -1,
+                            ))
+                        bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
+                                                                    2,
+                                                                    dim=0)
+                        # logger.info(f"1) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
+                        ###########################################################################
+                        bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
+                            bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)   
+
+                        # logger.info(f"2) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
+
+                        heatmap_zs = None
+                        if data["zs"].sum() > 0:
+                            heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat0_from1, bs_kptsfeat1, radius, W, data)
+
+                        (
+                            bs_relative_kpts0from1_l2,
+                            bs_kpts0from1_l2,
+                            bs_std0,
+                        ) = self.get_expected_locs(
+                            bs_kptsfeat1,
+                            bs_kptsfeat0_from1,
+                            bs_patch0_center_coord_l2,
+                            o_scale0,
+                            flag=self.post_scale
+                        )
+                    if data["gt"].sum() > 0:
+                        bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
+                        bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
+
+                        # fine level feature
+                        bs_kptsfeat1 = feat_map1_unfold[bs_b_ids1_l1,
+                                                        bs_j_ids1_l1].flatten(
+                                                            1, 2)  # [k, ww, c]
+                        bs_kptsfeat0_from1 = feat_map0_unfold[
+                            bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
+                                                                2)  # [k, nwnw, c]
+                        bs_feat_c = self.down_proj(
+                            torch.cat(
+                                [
+                                    feat_d8_0[bs_b_ids1_l1, bs_i_ids1_l1],
+                                    feat_d8_1[bs_b_ids1_l1, bs_j_ids1_l1],
+                                ],
+                                dim=0,
+                            ))  # [2n, 2c->c]
+                        bs_feat_cf = self.merge_feat(
+                            torch.cat(
+                                [
+                                    torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
+                                            0),
+                                    repeat(
+                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
+                                ],
+                                -1,
+                            ))
+                        bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
+                                                                    2,
+                                                                    dim=0)
+                        ###########################################################################
+                        bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
+                            bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)
+
+                        (
+                            bs_relative_kpts0from1_l2,
+                            bs_kpts0from1_l2,
+                            bs_std0,
+                        ) = self.get_expected_locs(
+                            bs_kptsfeat1,
+                            bs_kptsfeat0_from1,
+                            bs_patch0_center_coord_l2,
+                            o_scale0,
+                            flag=self.post_scale,
+                        )
 
                     bs_i_ids1_l2 = (
                         bs_patch0_center_coord_l2[:, 0] +
@@ -385,79 +429,123 @@ class FineModule(nn.Module):
                 bs_kpts1from0_l1 = kpts1from0_l1[bs_mask]
 
                 if len(bs_j_ids0_l1) > 0:
-                    bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
-                    # bs_kpts0_l2 = pt0_f_int
-                    # bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
-                    bs_patch1_center_coord_l2 = data["zs_pt1_f_float"]
-                    # fine level featur0
-                    bs_kptsfeat0 = feat_map0_unfold[bs_b_ids0_l1,
-                                                    bs_j_ids0_l1].flatten(
-                                                        1, 2)  # [k, ww, c]
-                    bs_kptsfeat1_from0 = feat_map1_unfold[
-                        bs_b_ids0_l1, bs_i_ids0_l1].flatten(1,
-                                                            2)  # [k, nwnw, c]
-
-                    feat_d8 = [
-                        # feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
-                        # feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
-                        
-                        # feat_f0_z,
-                        # feat_f1_z
-
-                        data['zs_feat_c0'],
-                        data['zs_feat_c1']
-                    ]
-                    # if data["zs"].sum() > 0:
-                    #     # feat_d8.append(feat_f0_z.flatten(1, 2))
-                    #     # feat_d8.append(feat_f1_z.flatten(1, 2))
-                    #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
-                    #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
-
-                    bs_feat_c = self.down_proj(
-                        torch.cat(feat_d8, dim=0)
-                    )  # [2n, 2c->c]
-
-                    # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
-                    # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
-                    
-                    bs_feat_cf = self.merge_feat(
-                        torch.cat(
-                            [
-                                # torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
-                                #           0),
-                                torch.cat([
-                                    feat_f1_z,
-                                    feat_f0_z
-                                ], dim=0),
-                                repeat(
-                                    bs_feat_c, 'n c -> n ww c', ww=self.W**2),
-                            ],
-                            -1,
-                        ))
-                    bs_kptsfeat0, bs_kptsfeat1_from0 = torch.chunk(bs_feat_cf,
-                                                                   2,
-                                                                   dim=0)
-                    ######################################################################################
-                    bs_kptsfeat0, bs_kptsfeat1_from0 = self.attention(
-                        bs_kptsfeat0, bs_kptsfeat1_from0, flag=1)
-                    
-                    heatmap_zs = None
                     if data["zs"].sum() > 0:
-                        heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat1_from0, bs_kptsfeat0, radius, W, data)
+                        bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
+                        # bs_kpts0_l2 = pt0_f_int
+                        # bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
+                        bs_patch1_center_coord_l2 = data["zs_pt1_f_float"]
+                        # fine level featur0
+                        bs_kptsfeat0 = feat_map0_unfold[bs_b_ids0_l1,
+                                                        bs_j_ids0_l1].flatten(
+                                                            1, 2)  # [k, ww, c]
+                        bs_kptsfeat1_from0 = feat_map1_unfold[
+                            bs_b_ids0_l1, bs_i_ids0_l1].flatten(1,
+                                                                2)  # [k, nwnw, c]
 
-                    (
-                        bs_relative_kpts1from0_l2,
-                        bs_kpts1from0_l2,
-                        bs_std1,
-                    ) = self.get_expected_locs(
-                        bs_kptsfeat0,
-                        bs_kptsfeat1_from0,
-                        bs_patch1_center_coord_l2,
-                        o_scale1,
-                        flag=self.post_scale,
-                        heatmap_zs=heatmap_zs,
-                        m_bids=m_bids
-                    )
+                        feat_d8 = [
+                            # feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
+                            # feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
+                            
+                            # feat_f0_z,
+                            # feat_f1_z
+
+                            data['zs_feat_c0'],
+                            data['zs_feat_c1']
+                        ]
+                        # if data["zs"].sum() > 0:
+                        #     # feat_d8.append(feat_f0_z.flatten(1, 2))
+                        #     # feat_d8.append(feat_f1_z.flatten(1, 2))
+                        #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
+                        #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
+
+                        bs_feat_c = self.down_proj(
+                            torch.cat(feat_d8, dim=0)
+                        )  # [2n, 2c->c]
+
+                        # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
+                        # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
+                        
+                        bs_feat_cf = self.merge_feat(
+                            torch.cat(
+                                [
+                                    # torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
+                                    #           0),
+                                    torch.cat([
+                                        feat_f1_z,
+                                        feat_f0_z
+                                    ], dim=0),
+                                    repeat(
+                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
+                                ],
+                                -1,
+                            ))
+                        bs_kptsfeat0, bs_kptsfeat1_from0 = torch.chunk(bs_feat_cf,
+                                                                    2,
+                                                                    dim=0)
+                        ######################################################################################
+                        bs_kptsfeat0, bs_kptsfeat1_from0 = self.attention(
+                            bs_kptsfeat0, bs_kptsfeat1_from0, flag=1)
+                        
+                        heatmap_zs = None
+                        if data["zs"].sum() > 0:
+                            heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat1_from0, bs_kptsfeat0, radius, W, data)
+
+                        (
+                            bs_relative_kpts1from0_l2,
+                            bs_kpts1from0_l2,
+                            bs_std1,
+                        ) = self.get_expected_locs(
+                            bs_kptsfeat0,
+                            bs_kptsfeat1_from0,
+                            bs_patch1_center_coord_l2,
+                            o_scale1,
+                            flag=self.post_scale,
+                        )
+                    if data["gt"].sum() > 0:
+                        bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
+                        bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
+
+                        # fine level featur0
+                        bs_kptsfeat0 = feat_map0_unfold[bs_b_ids0_l1,
+                                                        bs_j_ids0_l1].flatten(
+                                                            1, 2)  # [k, ww, c]
+                        bs_kptsfeat1_from0 = feat_map1_unfold[
+                            bs_b_ids0_l1, bs_i_ids0_l1].flatten(1,
+                                                                2)  # [k, nwnw, c]
+
+                        bs_feat_c = self.down_proj(
+                            torch.cat([
+                                feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
+                                feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
+                            ]))
+                        bs_feat_cf = self.merge_feat(
+                            torch.cat(
+                                [
+                                    torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
+                                            0),
+                                    repeat(
+                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
+                                ],
+                                -1,
+                            ))
+                        bs_kptsfeat0, bs_kptsfeat1_from0 = torch.chunk(bs_feat_cf,
+                                                                    2,
+                                                                    dim=0)
+                        ######################################################################################
+                        bs_kptsfeat0, bs_kptsfeat1_from0 = self.attention(
+                            bs_kptsfeat0, bs_kptsfeat1_from0, flag=1)
+
+                        (
+                            bs_relative_kpts1from0_l2,
+                            bs_kpts1from0_l2,
+                            bs_std1,
+                        ) = self.get_expected_locs(
+                            bs_kptsfeat0,
+                            bs_kptsfeat1_from0,
+                            bs_patch1_center_coord_l2,
+                            o_scale1,
+                            flag=self.post_scale,
+                        )
 
                     bs_i_ids0_l2 = (
                         bs_patch1_center_coord_l2[:, 0] +
