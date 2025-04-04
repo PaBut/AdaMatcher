@@ -374,6 +374,7 @@ class AdaMatcherLoss(nn.Module):
                 std1 = data['std1'][p_mask0]
                 r_w_pt0 = data['relative_kpts1from0_l2'][p_mask0]
                 gt_w_pt0_l2 = spv_w_pt0_i_l2[b_ids0_l1, j_ids0_l1]
+                logger.info(f"gt_w_pt0_l2: {gt_w_pt0_l2.shape}, w_pt0: {w_pt0.shape}")
                 gt_r_w_pt0_l2 = (gt_w_pt0_l2 -
                                 patch1_center_coord) / (self.window_size // 2)
             else:
