@@ -51,7 +51,7 @@ class MegaDepthDataset(Dataset):
 
         self.scene_info = np.load(npz_path, allow_pickle=True)
         self.pair_infos = self.scene_info['pair_infos'].copy()
-        del self.scene_info['pair_infos']
+        # del self.scene_info['pair_infos']
         self.pair_infos = [
             pair_info for pair_info in self.pair_infos
             if pair_info[1] > min_overlap_score
