@@ -590,9 +590,9 @@ class FineModule(nn.Module):
             torch.cat(j_ids1_l2, dim=0) if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
         })
-        # logger.info(f"relative_kpts0from1_l2: {data['relative_kpts0from1_l2'].shape}")
+        logger.info(f"relative_kpts0from1_l2: {data['relative_kpts0from1_l2'].shape}")
         if len(b_ids1_l1):
-            # logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
+            logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
             pts0.append(data['kpts0from1_l2'])
             pts1.append(data['kpts1_l2'])
 
