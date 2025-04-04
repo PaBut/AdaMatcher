@@ -195,10 +195,31 @@ def read_megadepth_color(path,
 
     return image, mask, scale, scale_wh
 
+def read_bin(path):
+    with open(path, "rb") as fid:
+        width, height, channels = np.genfromtxt(
+            fid, delimiter="&", max_rows=1, usecols=(0, 1, 2), dtype=int
+        )
+        fid.seek(0)
+        num_delimiter = 0
+        byte = fid.read(1)
+        while True:
+            if byte == b"&":
+                num_delimiter += 1
+                if num_delimiter >= 3:
+                    break
+            byte = fid.read(1)
+        array = np.fromfile(fid, np.float32)
+    array = array.reshape((width, height, channels), order="F")
+    transposed = np.transpose(array, (1, 0, 2)).squeeze()
+
+    return cv2.cvtColor(transposed, cv2.COLOR_BGR2GRAY)
 
 def read_megadepth_depth(path, pad_to=None):
     if str(path).endswith('.jpg'):
         depth = cv2.imread(path, 0)
+    elif str(path).endswith('.bin'):
+        depth = read_bin(path)
     elif str(path).startswith('s3://'):
         depth = load_array_from_s3(path, MEGADEPTH_CLIENT, None, use_h5py=True)
     else:
