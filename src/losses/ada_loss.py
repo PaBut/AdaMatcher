@@ -345,6 +345,7 @@ class AdaMatcherLoss(nn.Module):
                 data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1),
                 (data['spv_pt1_i_l1'] / s1_l2.unsqueeze(1)).round(),
             )
+            logger.info(f"{spv_w_pt0_i_l2.shape}, {spv_pt0_i_l2.shape}")
 
         b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
             data['b_ids0_l2'],
@@ -367,15 +368,17 @@ class AdaMatcherLoss(nn.Module):
                 j_ids0_l1[p_mask0],
             )
 
-            std1 = data['std1']#[p_mask0]
             w_pt0 = data['kpts1from0_l2'][p_mask0]  # * s1_l2
-            r_w_pt0 = data['relative_kpts1from0_l2']#[p_mask0]
             if data["gt"].sum() > 0:
                 patch1_center_coord = data['patch1_center_coord_l2'][p_mask0]
+                std1 = data['std1'][p_mask0]
+                r_w_pt0 = data['relative_kpts1from0_l2'][p_mask0]
                 gt_w_pt0_l2 = spv_w_pt0_i_l2[b_ids0_l1, j_ids0_l1]
                 gt_r_w_pt0_l2 = (gt_w_pt0_l2 -
                                 patch1_center_coord) / (self.window_size // 2)
             else:
+                std1 = data['std1']#[p_mask0]
+                r_w_pt0 = data['relative_kpts1from0_l2']#[p_mask0]
                 gt_r_w_pt0_l2 = data["expec_f_zs"]
 
             F_0to1 = pose2fundamental(data['K0'], data['K1'], data['T_0to1'])
