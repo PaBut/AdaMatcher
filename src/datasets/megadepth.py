@@ -131,9 +131,13 @@ class MegaDepthDataset(Dataset):
         data = {
             'image0':
             image0,  # (3, h, w)
+            'color0':
+            image0,
             'depth0':
             depth0,  # (h, w)
             'image1':
+            image1,
+            'color1':
             image1,
             'depth1':
             depth1,
