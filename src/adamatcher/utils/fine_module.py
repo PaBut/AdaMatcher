@@ -155,12 +155,12 @@ class FineModule(nn.Module):
     def spvc_zeroshot_fine(self, radius, data):
         pt1_f_int = data['zs_pt1_f_int']
         pt1_f_float = data['zs_pt1_f_float']
-        logger.info(f"pt1_f_int, pt1_f_float: {pt1_f_int.shape}, {pt1_f_float.shape}")
+        logger.info(f"pt1_f_int, pt1_f_float: {pt1_f_int}, {pt1_f_float}")
         expec_f_zs = (pt1_f_float - pt1_f_int) / radius
-        if "expec_f_zs" in data:
-            data.update({"expec_f_zs": torch.cat([expec_f_zs, data["expec_f_zs"]])})
-        else:
-            data.update({"expec_f_zs": expec_f_zs})
+        # if "expec_f_zs" in data:
+        #     data.update({"expec_f_zs": torch.cat([expec_f_zs, data["expec_f_zs"]])})
+        # else:
+        data.update({"expec_f_zs": expec_f_zs})
 
     def forward(
         self,
