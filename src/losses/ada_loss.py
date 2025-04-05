@@ -149,7 +149,7 @@ class AdaMatcherLoss(nn.Module):
                 logger.warning(
                     'assign a false supervision to avoid ddp deadlock')
                 # pdb.set_trace()
-            loss_valid = ((r_w_pt1[0] - gt_r_w_pt1[0])**2).sum(-1) * 0.0
+            loss_valid =  0.0
         else:
             loss_valid = (((r_w_pt1[correct_mask] - gt_r_w_pt1[correct_mask])**
                            2).sum(-1) * weight[correct_mask]).mean()
