@@ -569,16 +569,19 @@ class FineModule(nn.Module):
             torch.cat(kpts1_l2, dim=0) if len(b_ids1_l1) else torch.empty(
                 0, 2, device=self.device, dtype=torch.long),
             'kpts0from1_l2':
-            torch.cat(kpts0from1_l2, dim=0)#[m_bids]
+            torch.cat(kpts0from1_l2, dim=0)[m_bids] if data["zs"].sum() > 0 
+            else torch.cat(kpts0from1_l2, dim=0)
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'relative_kpts0from1_l2':
-            torch.cat(relative_kpts0from1_l2, dim=0)#[m_bids]
+            torch.cat(relative_kpts0from1_l2, dim=0)[m_bids] if data["zs"].sum() > 0 
+            else torch.cat(relative_kpts0from1_l2, dim=0)
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'patch0_center_coord_l2':
             torch.cat(patch0_center_coord_l2, dim=0)#[m_bids]
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'std0':
-            torch.cat(std0, dim=0)#[m_bids] 
+            torch.cat(std0, dim=0)[m_bids] if data["zs"].sum() > 0
+            else torch.cat(std0, dim=0)
             if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids1_l2':
@@ -602,16 +605,19 @@ class FineModule(nn.Module):
             torch.cat(kpts0_l2, dim=0) if len(b_ids0_l1) else torch.empty(
                 0, 2, device=self.device, dtype=torch.long),
             'kpts1from0_l2':
-            torch.cat(kpts1from0_l2, dim=0)#[m_bids]
+            torch.cat(kpts1from0_l2, dim=0)[m_bids] if data["zs"].sum() > 0
+            else torch.cat(kpts1from0_l2, dim=0)
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'relative_kpts1from0_l2':
-            torch.cat(relative_kpts1from0_l2, dim=0)#[m_bids]
+            torch.cat(relative_kpts1from0_l2, dim=0)[m_bids] if data["zs"].sum() > 0
+            else torch.cat(relative_kpts1from0_l2, dim=0)
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'patch1_center_coord_l2':
             torch.cat(patch1_center_coord_l2, dim=0)#[m_bids]
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'std1':
-            torch.cat(std1, dim=0)#[m_bids]
+            torch.cat(std1, dim=0)[m_bids] if data["zs"].sum() > 0
+            else torch.cat(std1, dim=0)
               if len(b_ids0_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids0_l2':
