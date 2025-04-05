@@ -362,17 +362,17 @@ class AdaMatcherLoss(nn.Module):
             p_mask0 = (pt0 == gt_pt0_l2).all(-1)
             logger.info(f"p_mask0: {p_mask0.shape}")
             pt0, gt_pt0_l2, b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
-                pt0[p_mask0],
-                gt_pt0_l2[p_mask0],
-                b_ids0_l1[p_mask0],
-                i_ids0_l1[p_mask0],
-                j_ids0_l1[p_mask0],
+                pt0,#[p_mask0],
+                gt_pt0_l2,#[p_mask0],
+                b_ids0_l1,#[p_mask0],
+                i_ids0_l1,#[p_mask0],
+                j_ids0_l1,#[p_mask0],
             )
             logger.info(f"b_ids0_l1: {b_ids0_l1.shape}, i_ids0_l1: {i_ids0_l1.shape}, j_ids0_l1: {j_ids0_l1.shape}")
 
             w_pt0 = data['kpts1from0_l2'][p_mask0]  # * s1_l2
             if data["gt"].sum() > 0:
-                patch1_center_coord = data['patch1_center_coord_l2'][p_mask0]
+                patch1_center_coord = data['patch1_center_coord_l2']#[p_mask0]
                 std1 = data['std1'][p_mask0]
                 r_w_pt0 = data['relative_kpts1from0_l2'][p_mask0]
                 gt_w_pt0_l2 = spv_w_pt0_i_l2[b_ids0_l1, j_ids0_l1]
