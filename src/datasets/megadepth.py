@@ -49,7 +49,7 @@ class MegaDepthDataset(Dataset):
                 'You are using `min_overlap_score`!=0 in test mode. Set to 0.')
             min_overlap_score = 0
 
-        self.scene_info = np.load(npz_path, allow_pickle=True)
+        self.scene_info = np.load(npz_path, allow_pickle=True).copy()
         self.pair_infos = self.scene_info['pair_infos'].copy()
         # del self.scene_info['pair_infos']
         self.pair_infos = [
