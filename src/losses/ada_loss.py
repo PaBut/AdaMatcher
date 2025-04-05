@@ -381,7 +381,7 @@ class AdaMatcherLoss(nn.Module):
             else:
                 std1 = data['std1']#[p_mask0]
                 r_w_pt0 = data['relative_kpts1from0_l2']#[p_mask0]
-                gt_r_w_pt0_l2 = data["expec_f_zs"][b_ids1_l1]
+                gt_r_w_pt0_l2 = data["expec_f_zs"]
 
             F_0to1 = pose2fundamental(data['K0'], data['K1'], data['T_0to1'])
             logger.info(f"gt_r_w_pt0_l2: {gt_r_w_pt0_l2}, pt0: {pt0}")
@@ -412,7 +412,7 @@ class AdaMatcherLoss(nn.Module):
             if data["gt"].sum() > 0:
                 gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
             else:
-                gt_pt1_l2 = data["zs_pt1_f_float"][b_ids1_l1]
+                gt_pt1_l2 = data["zs_pt1_f_float"]
             # logger.info(f"gt_pt1_l2: {gt_pt1_l2.shape}, pt1: {pt1.shape}")
             p_mask1 = (pt1 == gt_pt1_l2).all(-1)
             pt1, gt_pt1_l2, b_ids1_l1, i_ids1_l1, j_ids1_l1 = (
