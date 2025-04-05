@@ -155,7 +155,7 @@ class FineModule(nn.Module):
     def spvc_zeroshot_fine(self, radius, data):
         pt1_f_int = data['zs_pt1_f_int']
         pt1_f_float = data['zs_pt1_f_float']
-        logger.info(f"pt1_f_int, pt1_f_float: {pt1_f_int}, {pt1_f_float}")
+        # logger.info(f"pt1_f_int, pt1_f_float: {pt1_f_int}, {pt1_f_float}")
         expec_f_zs = (pt1_f_float - pt1_f_int) / radius
         # if "expec_f_zs" in data:
         #     data.update({"expec_f_zs": torch.cat([expec_f_zs, data["expec_f_zs"]])})
@@ -591,9 +591,9 @@ class FineModule(nn.Module):
             torch.cat(j_ids1_l2, dim=0) if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
         })
-        logger.info(f"relative_kpts0from1_l2: {data['relative_kpts0from1_l2'].shape}")
+        # logger.info(f"relative_kpts0from1_l2: {data['relative_kpts0from1_l2'].shape}")
         if len(b_ids1_l1):
-            logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
+            # logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
             pts0.append(data['kpts0from1_l2'])
             pts1.append(data['kpts1_l2'])
 
@@ -626,7 +626,7 @@ class FineModule(nn.Module):
         })
         # logger.info(f"std0: {data['std0'].shape}, std1: {data['std1'].shape}")
         if len(b_ids0_l1):
-            logger.info(f"relative_kpts1from0_l2: {data['relative_kpts1from0_l2'].shape}")
+            # logger.info(f"relative_kpts1from0_l2: {data['relative_kpts1from0_l2'].shape}")
             # logger.info(f"kpts0_l2, kpts1from0_l2: {data['kpts0_l2'].shape}, {data['kpts1from0_l2'].shape}")
             pts1.append(data['kpts1from0_l2'])
             pts0.append(data['kpts0_l2'])
