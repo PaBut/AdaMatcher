@@ -357,6 +357,7 @@ class AdaMatcherLoss(nn.Module):
                 gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1].round().int()
             else:
                 gt_pt0_l2 = data["zs_pt0_f_float"][b_ids0_l1]
+                pt0 = pt0[data['m_bids']]
             pt0 = data['kpts0_l2']  # * s0_l2
             p_mask0 = (pt0 == gt_pt0_l2).all(-1)
             logger.info(f"p_mask0: {p_mask0.shape}")
@@ -413,6 +414,7 @@ class AdaMatcherLoss(nn.Module):
                 gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
             else:
                 gt_pt1_l2 = data["zs_pt1_f_float"]
+                pt1 = pt1[data['m_bids']]
             # logger.info(f"gt_pt1_l2: {gt_pt1_l2.shape}, pt1: {pt1.shape}")
             p_mask1 = (pt1 == gt_pt1_l2).all(-1)
             pt1, gt_pt1_l2, b_ids1_l1, i_ids1_l1, j_ids1_l1 = (
