@@ -639,9 +639,9 @@ class FineModule(nn.Module):
             pts0 = torch.empty(0, 2, device=self.device)
 
         if len(m_bids) != 0:
-            scale1_l2 = (self.scale_l2 * data['scale1'][m_bids]
+            scale1_l2 = (self.scale_l2 * data['scale1']#[m_bids]
                          if 'scale1' in data else self.scale_l2)
-            scale0_l2 = (self.scale_l2 * data['scale0'][m_bids]
+            scale0_l2 = (self.scale_l2 * data['scale0']#[m_bids]
                          if 'scale0' in data else self.scale_l2)
         else:
             scale1_l2 = scale0_l2 = 0.0
