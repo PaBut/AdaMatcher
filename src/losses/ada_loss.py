@@ -358,7 +358,6 @@ class AdaMatcherLoss(nn.Module):
             else:
                 gt_pt0_l2 = data["zs_pt0_f_float"][b_ids0_l1]
             pt0 = data['kpts0_l2']  # * s0_l2
-            logger.info(f"gt_pt0_l2: {gt_pt0_l2}, pt0: {pt0}")
             p_mask0 = (pt0 == gt_pt0_l2).all(-1)
             logger.info(f"p_mask0: {p_mask0.shape}")
             pt0, gt_pt0_l2, b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
@@ -385,6 +384,7 @@ class AdaMatcherLoss(nn.Module):
                 gt_r_w_pt0_l2 = data["expec_f_zs"][b_ids1_l1]
 
             F_0to1 = pose2fundamental(data['K0'], data['K1'], data['T_0to1'])
+            logger.info(f"gt_r_w_pt0_l2: {gt_r_w_pt0_l2}, pt0: {pt0}")
             fine_loss0 = self._compute_fine_loss_l2(
                 gt_r_w_pt0_l2,
                 pt0,
@@ -413,7 +413,6 @@ class AdaMatcherLoss(nn.Module):
                 gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
             else:
                 gt_pt1_l2 = data["zs_pt1_f_float"][b_ids1_l1]
-            logger.info(f"gt_pt0_l2: {gt_pt1_l2}, pt0: {pt1}")
             # logger.info(f"gt_pt1_l2: {gt_pt1_l2.shape}, pt1: {pt1.shape}")
             p_mask1 = (pt1 == gt_pt1_l2).all(-1)
             pt1, gt_pt1_l2, b_ids1_l1, i_ids1_l1, j_ids1_l1 = (
@@ -438,6 +437,7 @@ class AdaMatcherLoss(nn.Module):
                 gt_r_w_pt1_l2 = data["expec_f_zs"][b_ids1_l1]
 
             F_1to0 = pose2fundamental(data['K1'], data['K0'], data['T_1to0'])
+            logger.info(f"gt_pt0_l2: {gt_r_w_pt1_l2}, pt0: {pt1}")
             fine_loss1 = self._compute_fine_loss_l2(
                 gt_r_w_pt1_l2,
                 pt1,
