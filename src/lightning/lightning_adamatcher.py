@@ -73,6 +73,8 @@ class PL_AdaMatcher(pl.LightningModule):
         self.matcher = AdaMatcher(config=_config["adamatcher"])
         self.mask_loss = AdaMatcherLoss(_config)
 
+        torch.set_float32_matmul_precision('medium')
+
         # Pretrained weights
         if pretrained_ckpt:
             torch.serialization.add_safe_globals([ModelCheckpoint])
