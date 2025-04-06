@@ -2,7 +2,7 @@ from src.config.default import _CN as cfg
 
 cfg.ADAMATCHER.MATCH_COARSE.MATCH_TYPE = "dual_softmax"
 
-cfg.TRAINER.CANONICAL_LR = 1e-4
+cfg.TRAINER.CANONICAL_LR = 1e-3
 cfg.TRAINER.WARMUP_STEP = 300
 cfg.TRAINER.WARMUP_RATIO = 0.1
 cfg.TRAINER.MSLR_GAMMA = 0.2
