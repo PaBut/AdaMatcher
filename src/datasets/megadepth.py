@@ -75,6 +75,8 @@ class MegaDepthDataset(Dataset):
 
         if self.is_walkdepth:
             self.root_dir = osp.join(self.root_dir, self.scene_id)
+            logger.info(
+                f'Using walkdepth dataset: {self.root_dir} for {self.scene_id}')
 
     def __len__(self):
         return len(self.pair_infos)
