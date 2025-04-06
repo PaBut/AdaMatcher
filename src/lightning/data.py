@@ -38,17 +38,20 @@ class MultiSceneDataModule(pl.LightningDataModule):
         self.test_data_source = config.DATASET.TEST_DATA_SOURCE
         # training and validating
         self.train_data_root = config.DATASET.TRAIN_DATA_ROOT
+        self.train_walkdepth = config.DATASET.TRAIN_WALKDEPTH
         self.train_pose_root = config.DATASET.TRAIN_POSE_ROOT  # (optional)
         self.train_npz_root = config.DATASET.TRAIN_NPZ_ROOT
         self.train_list_path = config.DATASET.TRAIN_LIST_PATH
         self.train_intrinsic_path = config.DATASET.TRAIN_INTRINSIC_PATH
         self.val_data_root = config.DATASET.VAL_DATA_ROOT
+        self.val_walkdepth = config.DATASET.VAL_WALKDEPTH
         self.val_pose_root = config.DATASET.VAL_POSE_ROOT  # (optional)
         self.val_npz_root = config.DATASET.VAL_NPZ_ROOT
         self.val_list_path = config.DATASET.VAL_LIST_PATH
         self.val_intrinsic_path = config.DATASET.VAL_INTRINSIC_PATH
         # testing
         self.test_data_root = config.DATASET.TEST_DATA_ROOT
+        self.test_walkdepth = config.DATASET.TEST_WALKDEPTH
         self.test_pose_root = config.DATASET.TEST_POSE_ROOT  # (optional)
         self.test_npz_root = config.DATASET.TEST_NPZ_ROOT
         self.test_list_path = config.DATASET.TEST_LIST_PATH
@@ -135,7 +138,8 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 data_source=self.train_data_source,
                 min_overlap_score=self.min_overlap_score_train,
                 pose_dir=self.train_pose_root,
-                dcfg=self.dataset_cfg.TRAIN
+                dcfg=self.dataset_cfg.TRAIN,
+                walk_depth=self.train_walkdepth,
             )
             # setup multiple (optional) validation subsets
             if isinstance(self.val_list_path, (list, tuple)):
@@ -157,7 +161,8 @@ class MultiSceneDataModule(pl.LightningDataModule):
                             data_source=self.val_data_source,
                             min_overlap_score=self.min_overlap_score_test,
                             pose_dir=self.val_pose_root,
-                            dcfg=self.dataset_cfg.VALID
+                            dcfg=self.dataset_cfg.VALID,
+                            walk_depth=self.val_walkdepth
                         ))
             else:
                 self.val_dataset = self._setup_dataset(
@@ -169,7 +174,8 @@ class MultiSceneDataModule(pl.LightningDataModule):
                     data_source=self.val_data_source,
                     min_overlap_score=self.min_overlap_score_test,
                     pose_dir=self.val_pose_root,
-                    dcfg=self.dataset_cfg.VALID
+                    dcfg=self.dataset_cfg.VALID,
+                    walk_depth=self.val_walkdepth,
                 )
             logger.info(f'[rank:{self.rank}] Train & Val Dataset loaded!')
         else:  # stage == 'test
@@ -182,7 +188,8 @@ class MultiSceneDataModule(pl.LightningDataModule):
                 data_source=self.test_data_source,
                 min_overlap_score=self.min_overlap_score_test,
                 pose_dir=self.test_pose_root,
-                dcfg=self.dataset_cfg.TEST
+                dcfg=self.dataset_cfg.TEST,
+                walk_depth=self.test_walkdepth,
             )
             logger.info(f'[rank:{self.rank}]: Test Dataset loaded!')
 
@@ -196,7 +203,8 @@ class MultiSceneDataModule(pl.LightningDataModule):
         mode='train',
         min_overlap_score=0.0,
         pose_dir=None,
-        dcfg=None
+        dcfg=None,
+        walk_depth=False,
     ):
         """Setup train / val / test set."""
         with open(scene_list_path, 'r') as f:
@@ -226,6 +234,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
             max_samples=self.max_samples,
             pose_dir=pose_dir,
             dcfg=dcfg,
+            walk_depth=walk_depth,
         )
 
     def _build_concat_dataset(
@@ -241,6 +250,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         min_overlap_score=0.0,
         pose_dir=None,
         dcfg=None,
+        walk_depth=False,
     ):
         datasets = []
         augment_fn = self.augment_fn if mode == 'train' else None
@@ -280,6 +290,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                         depth_padding=self.mgdpt_depth_pad,
                         augment_fn=augment_fn,
                         coarse_scale=self.coarse_scale,
+                        walk_depth=walk_depth,
                     ))
             elif data_source == 'Walk':
                 datasets.append(
@@ -313,6 +324,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         min_overlap_score=0.0,
         pose_dir=None,
         dcfg=None,
+        walk_depth=False,
     ):
         augment_fn = self.augment_fn if mode == 'train' else None
         # data_source = (self.trainval_data_source

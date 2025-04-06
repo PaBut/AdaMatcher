@@ -71,6 +71,10 @@ class MegaDepthDataset(Dataset):
         self.augment_fn = augment_fn if mode == 'train' else None
         self.coarse_scale = kwargs[
             'coarse_scale']  # getattr(kwargs, 'coarse_scale', 0.125)
+        self.is_walkdepth = kwargs.get('walk_depth', False)
+
+        if self.is_walkdepth:
+            self.root_dir = osp.join(self.root_dir, self.scene_id)
 
     def __len__(self):
         return len(self.pair_infos)
