@@ -123,6 +123,7 @@ def compute_symmetrical_epipolar_errors(data):
     pts1 = data["mkpts1_f"]
 
     epi_errs = []
+    logger.debug(f"m_bids: {Tx.size(0)}")
     for bs in range(Tx.size(0)):
         mask = m_bids == bs
         epi_errs.append(
