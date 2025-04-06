@@ -9,11 +9,11 @@ cd $PROJECT_DIR
 
 TRAIN_IMG_SIZE=832
 data_cfg_path="configs/data/walkdepth_trainval_${TRAIN_IMG_SIZE}.py"
-main_cfg_path="configs/loftr/outdoor/loftr_ds_dense.py"
+main_cfg_path="configs/loftr/outdoor/loftr_ds_walkdepth.py"
 
 n_nodes=1
 n_gpus_per_node=1 # 1 4 8
-torch_num_workers=4 # 1 4 8
+torch_num_workers=8 # 1 4 8
 batch_size=1
 pin_memory=true
 ckpt_path="weights/adamatcher.ckpt"
@@ -32,4 +32,4 @@ python3 -u ./train.py \
     --num_sanity_val_steps=10 \
     --benchmark=True \
     --ckpt_path=${ckpt_path} \
-    --max_epochs=30 >> ./OUTPUT/AdaMatcher.txt
+    --max_epochs=5 >> ./OUTPUT/AdaMatcher.txt

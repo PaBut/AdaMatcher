@@ -448,8 +448,8 @@ class PL_AdaMatcher(pl.LightningModule):
                 k: flattenList([_me[k] for _me in _metrics])
                 for k in _metrics[0]
             }
-            logger.info(f"{metrics}")
-            logger.info(f"{outputs[0]["metrics"]}")
+            # logger.info(f"{metrics}")
+            # logger.info(f"{outputs[0]["metrics"]}")
             # NOTE: all ranks need to `aggregate_merics`, but only log at rank-0
             val_metrics_4tb = aggregate_metrics(
                 metrics, self.config.TRAINER.EPI_ERR_THR
