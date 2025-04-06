@@ -123,7 +123,6 @@ def compute_symmetrical_epipolar_errors(data):
     pts1 = data["mkpts1_f"]
 
     epi_errs = []
-    logger.debug(f"m_bids: {Tx.size(0)}")
     for bs in range(Tx.size(0)):
         mask = m_bids == bs
         epi_errs.append(
@@ -138,6 +137,7 @@ def compute_symmetrical_epipolar_errors(data):
 
 def estimate_pose(kpts0, kpts1, K0, K1, thresh, conf=0.99999):
     if len(kpts0) < 5:
+        logger.warning("Not enough keypoints to estimate pose.")
         return None
     # normalize keypoints
     # kpts0_ = (kpts0 - K0[[0, 1], [2, 2]][None])*K1[[0, 1], [0, 1]][None] / K0[[0, 1], [0, 1]][None]
