@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 SCRIPTPATH=$(dirname $(readlink -f "$0"))
-PROJECT_DIR="${SCRIPTPATH}/../../"
+PROJECT_DIR="${SCRIPTPATH}/../"
 
 # conda activate adamatcher
 export PYTHONPATH=$PROJECT_DIR:$PYTHONPATH
