@@ -345,7 +345,7 @@ class AdaMatcherLoss(nn.Module):
                 data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1),
                 (data['spv_pt1_i_l1'] / s1_l2.unsqueeze(1)).round(),
             )
-            logger.info(f"{spv_w_pt0_i_l2.shape}, {spv_pt0_i_l2.shape}")
+            logger.info(f"{spv_w_pt0_i_l2}, {spv_pt0_i_l2}")
 
         b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
             data['b_ids0_l2'],
