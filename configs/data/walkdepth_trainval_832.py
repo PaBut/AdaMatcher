@@ -1,0 +1,44 @@
+# from configs.data.base import cfg
+# -*- coding: utf-8 -*-
+# @Author  : xuelun
+
+from os.path import join
+from yacs.config import CfgNode as CN
+
+_CN = CN()
+
+_CN.DATASET = CN()
+_CN.TRAINER = CN()
+
+_CN.NJOBS = 1  # x scenes
+
+TRAINVAL_BASE_PATH = "data/WalkDepth"
+
+_CN.DATASET.TRAIN_DATA_SOURCE = "MegaDepth"
+_CN.DATASET.TRAIN_WALKDEPTH = True
+_CN.DATASET.TRAIN_DATA_ROOT = TRAINVAL_BASE_PATH
+_CN.DATASET.TRAIN_NPZ_ROOT = TRAINVAL_BASE_PATH
+_CN.DATASET.TRAIN_LIST_PATH = f"{TRAINVAL_BASE_PATH}/train.txt"
+_CN.DATASET.MIN_OVERLAP_SCORE_TRAIN = 0.1
+
+TEST_BASE_PATH = "data/Aachen"
+_CN.DATASET.VAL_DATA_SOURCE = "MegaDepth" 
+_CN.DATASET.VAL_WALKDEPTH = True
+_CN.DATASET.VAL_DATA_ROOT = TRAINVAL_BASE_PATH
+_CN.DATASET.VAL_NPZ_ROOT = f"{TRAINVAL_BASE_PATH}"
+_CN.DATASET.VAL_LIST_PATH = f"{TRAINVAL_BASE_PATH}/valid.txt"
+
+_CN.DATASET.TEST_DATA_SOURCE = "MegaDepth"  ##############
+_CN.DATASET.TEST_WALKDEPTH = False
+_CN.DATASET.TEST_DATA_ROOT = TEST_BASE_PATH
+_CN.DATASET.TEST_NPZ_ROOT = TEST_BASE_PATH
+_CN.DATASET.TEST_LIST_PATH = f"{TEST_BASE_PATH}/aachen.txt"
+
+# 368 scenes in total for MegaDepth
+# (with difficulty balanced (further split each scene to 3 sub-scenes))
+_CN.TRAINER.N_SAMPLES_PER_SUBSET = 100
+
+_CN.DATASET.MGDPT_IMG_RESIZE = 832
+
+cfg = _CN
+
