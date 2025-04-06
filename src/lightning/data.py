@@ -266,6 +266,9 @@ class MultiSceneDataModule(pl.LightningDataModule):
         ):
             # `ScanNetDataset`/`MegaDepthDataset` load all data from npz_path when initialized, which might take time.
             npz_path = osp.join(npz_dir, npz_name)
+            if(os.path.exists(npz_path) == False):
+                logger.warning(f'npz_path {npz_path} does not exist!')
+                continue
             if data_source == 'ScanNet':
                 datasets.append(
                     ScanNetDataset(
