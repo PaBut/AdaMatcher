@@ -12,7 +12,7 @@ _CN.TRAINER = CN()
 
 _CN.NJOBS = 1  # x scenes
 
-TRAINVAL_BASE_PATH = "data/WalkDepth"
+TRAINVAL_BASE_PATH = "data/WalkDepthDb"
 
 _CN.DATASET.TRAIN_DATA_SOURCE = "MegaDepth"
 _CN.DATASET.TRAIN_WALKDEPTH = True
