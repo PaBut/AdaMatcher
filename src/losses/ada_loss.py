@@ -149,7 +149,7 @@ class AdaMatcherLoss(nn.Module):
                 logger.warning(
                     'assign a false supervision to avoid ddp deadlock')
                 # pdb.set_trace()
-            loss_valid = torch.tensor(float('inf'))
+            loss_valid = torch.tensor(10.0)
         else:
             loss_valid = (((r_w_pt1[correct_mask] - gt_r_w_pt1[correct_mask])**
                            2).sum(-1) * weight[correct_mask]).mean()
@@ -477,9 +477,9 @@ class AdaMatcherLoss(nn.Module):
         if coarse_loss is not None:
             loss = coarse_loss + fine_loss  # 1.5*fine_loss
             loss_scalars = {
-                # 'mf':
-                # mask_focal_loss.clone().detach().cpu(
-                # ),  # (mask_focal_loss0.clone().detach().cpu() + mask_focal_loss1.clone().detach().cpu()) / 2,
+                'mf':
+                mask_focal_loss.clone().detach().cpu(
+                ),  # (mask_focal_loss0.clone().detach().cpu() + mask_focal_loss1.clone().detach().cpu()) / 2,
                 'c': (cas_loss0.clone().detach().cpu() +
                       cas_loss1.clone().detach().cpu()) / 2,
                 'f':
