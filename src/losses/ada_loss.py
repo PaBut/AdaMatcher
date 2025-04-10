@@ -288,7 +288,7 @@ class AdaMatcherLoss(nn.Module):
                 weight1 = (data['mask0_d8'].flatten(-2)[..., None] *
                            data['mask1_d8'].flatten(-2)[:, None]).float()
 
-            if data["gt"].sum() > 0:
+            if 1:
                 mask_dice_loss, mask_focal_loss = [], []
                 # overlap_scores1, overlap_scores0 = data['overlap_scores1'], data['overlap_scores0']
                 for bs_id in range(self.bs):
@@ -327,83 +327,62 @@ class AdaMatcherLoss(nn.Module):
                     mask_focal_loss.append(bs_mask_focal_loss)
                 mask_focal_loss = torch.stack(mask_focal_loss, dim=0).mean()
                 mask_loss = mask_focal_loss
-            else:
-                mask_loss = self.compute_coarse_zeroshot_loss(data['zs_conf_matrix'])
+
             coarse_loss = self.class_weight * cas_loss + self.mask_weight * mask_loss
         else:
             coarse_loss = None
 
-        torch.cuda.empty_cache()
-
         # fine level
-        if data["gt"].sum() > 0:
-            spv_w_pt0_i_l2, spv_pt0_i_l2 = (
-                data['spv_w_pt0_i_l1'] / s1_l2.unsqueeze(1),
-                (data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1)).round(),
-            )
-            spv_w_pt1_i_l2, spv_pt1_i_l2 = (
-                data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1),
-                (data['spv_pt1_i_l1'] / s1_l2.unsqueeze(1)).round(),
-            )
-            # logger.info(f"{spv_w_pt0_i_l2[(spv_w_pt0_i_l2[..., 0] > 0) & (spv_w_pt0_i_l2[..., 1] > 0)]}")
-            # logger.info(f"{spv_pt0_i_l2[(spv_pt0_i_l2[..., 0] > 0) & (spv_pt0_i_l2[..., 1] > 0)]}")
+        spv_w_pt0_i_l2, spv_pt0_i_l2 = (
+            data['spv_w_pt0_i_l1'] / s1_l2.unsqueeze(1),
+            (data['spv_pt0_i_l1'] / s0_l2.unsqueeze(1)).round(),
+        )
+        spv_w_pt1_i_l2, spv_pt1_i_l2 = (
+            data['spv_w_pt1_i_l1'] / s0_l2.unsqueeze(1),
+            (data['spv_pt1_i_l1'] / s1_l2.unsqueeze(1)).round(),
+        )
 
         b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
             data['b_ids0_l2'],
             data['i_ids0_l1'],
             data['j_ids0_l1'],
         )
-        if len(b_ids0_l1) > 0: 
-            if data["gt"].sum() > 0:
-                pt0 = data['kpts0_l2']  # * s0_l2
+        if len(b_ids0_l1) > 0:
+            gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1]
+            pt0 = data['kpts0_l2']  # * s0_l2
+            p_mask0 = (pt0 == gt_pt0_l2).all(-1)
+            pt0, gt_pt0_l2, b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
+                pt0[p_mask0],
+                gt_pt0_l2[p_mask0],
+                b_ids0_l1[p_mask0],
+                i_ids0_l1[p_mask0],
+                j_ids0_l1[p_mask0],
+            )
 
-                if data["gt"].sum() > 0:
-                    gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1]
-                else:
-                    gt_pt0_l2 = data["zs_pt0_f_float"][b_ids0_l1]
-                    pt0 = pt0[data['m_bids']]
-                p_mask0 = (pt0 == gt_pt0_l2).all(-1)
-                logger.info(f"p_mask0: {p_mask0.shape}")
-                pt0, gt_pt0_l2, b_ids0_l1, i_ids0_l1, j_ids0_l1 = (
-                    pt0[p_mask0],
-                    gt_pt0_l2[p_mask0],
-                    b_ids0_l1[p_mask0],
-                    i_ids0_l1[p_mask0],
-                    j_ids0_l1[p_mask0],
-                )
-                # logger.info(f"b_ids0_l1: {b_ids0_l1.shape}, i_ids0_l1: {i_ids0_l1.shape}, j_ids0_l1: {j_ids0_l1.shape}")
+            logger.info(f"pt0: {pt0.shape}")
 
-                w_pt0 = data['kpts1from0_l2'][p_mask0]  # * s1_l2
-                if data["gt"].sum() > 0:
-                    patch1_center_coord = data['patch1_center_coord_l2'][p_mask0]
-                    std1 = data['std1'][p_mask0]
-                    r_w_pt0 = data['relative_kpts1from0_l2'][p_mask0]
-                    gt_w_pt0_l2 = spv_w_pt0_i_l2[b_ids0_l1, j_ids0_l1]
-                    logger.info(f"gt_w_pt0_l2: {gt_w_pt0_l2.shape}, w_pt0: {w_pt0.shape}")
-                    gt_r_w_pt0_l2 = (gt_w_pt0_l2 -
-                                    patch1_center_coord) / (self.window_size // 2)
-                else:
-                    std1 = data['std1']#[p_mask0]
-                    r_w_pt0 = data['relative_kpts1from0_l2']#[p_mask0]
-                    gt_r_w_pt0_l2 = data["expec_f_zs"]
+            std1 = data['std1'][p_mask0]
+            w_pt0 = data['kpts1from0_l2'][p_mask0]  # * s1_l2
+            r_w_pt0 = data['relative_kpts1from0_l2'][p_mask0]
+            patch1_center_coord = data['patch1_center_coord_l2'][p_mask0]
+            gt_w_pt0_l2 = spv_w_pt0_i_l2[b_ids0_l1, j_ids0_l1]
+            gt_r_w_pt0_l2 = (gt_w_pt0_l2 -
+                             patch1_center_coord) / (self.window_size // 2)
 
-                F_0to1 = pose2fundamental(data['K0'], data['K1'], data['T_0to1'])
-                # logger.info(f"gt_r_w_pt0_l2: {gt_r_w_pt0_l2}, pt0: {pt0}")
-                fine_loss0 = self._compute_fine_loss_l2(
-                    gt_r_w_pt0_l2,
-                    pt0,
-                    w_pt0,
-                    r_w_pt0,
-                    b_ids0_l1,
-                    std1,
-                    s0_l2,
-                    s1_l2,
-                    self.window_size * 0.5 * torch.norm(s1_l2, p=2),
-                    F_0to1,
-                )  # /2  0.8
-                if fine_loss0 is None:
-                    fine_loss0 = torch.zeros_like(cas_loss)
-            else:
+            F_0to1 = pose2fundamental(data['K0'], data['K1'], data['T_0to1'])
+            fine_loss0 = self._compute_fine_loss_l2(
+                gt_r_w_pt0_l2,
+                pt0,
+                w_pt0,
+                r_w_pt0,
+                b_ids0_l1,
+                std1,
+                s0_l2,
+                s1_l2,
+                self.window_size * 0.5 * torch.norm(s1_l2, p=2),
+                F_0to1,
+            )  # /2  0.8
+            if fine_loss0 is None:
                 fine_loss0 = torch.zeros_like(cas_loss)
         else:
             fine_loss0 = torch.zeros_like(cas_loss)
@@ -414,53 +393,41 @@ class AdaMatcherLoss(nn.Module):
             data['j_ids1_l1'],
         )
         if len(b_ids1_l1) > 0:
-            if data["gt"].sum() > 0:
-                pt1 = data['kpts1_l2']  # * s1_l2
-                if data["gt"].sum() > 0:
-                    gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
-                else:
-                    gt_pt1_l2 = data["zs_pt1_f_float"]
-                    pt1 = pt1[data['m_bids']]
-                # logger.info(f"gt_pt1_l2: {gt_pt1_l2.shape}, pt1: {pt1.shape}")
-                p_mask1 = (pt1 == gt_pt1_l2).all(-1)
-                pt1, gt_pt1_l2, b_ids1_l1, i_ids1_l1, j_ids1_l1 = (
-                    pt1[p_mask1],
-                    gt_pt1_l2[p_mask1],
-                    b_ids1_l1[p_mask1],
-                    i_ids1_l1[p_mask1],
-                    j_ids1_l1[p_mask1],
-                )
+            pt1 = data['kpts1_l2']  # * s1_l2
+            gt_pt1_l2 = spv_pt1_i_l2[b_ids1_l1, j_ids1_l1]
+            p_mask1 = (pt1 == gt_pt1_l2).all(-1)
+            pt1, gt_pt1_l2, b_ids1_l1, i_ids1_l1, j_ids1_l1 = (
+                pt1[p_mask1],
+                gt_pt1_l2[p_mask1],
+                b_ids1_l1[p_mask1],
+                i_ids1_l1[p_mask1],
+                j_ids1_l1[p_mask1],
+            )
 
-                w_pt1 = data['kpts0from1_l2'][p_mask1]  # * s0_l2
-                r_w_pt1 = data['relative_kpts0from1_l2'][p_mask1]
-                # logger.info(f"r_w_pt1: {r_w_pt1.shape}")
-                patch0_center_coord = data['patch0_center_coord_l2'][p_mask1]
-                std0 = data['std0'][p_mask1]
-                
-                if data["gt"].sum() > 0:
-                    gt_w_pt1_l2 = spv_w_pt1_i_l2[b_ids1_l1, j_ids1_l1]
-                    gt_r_w_pt1_l2 = (gt_w_pt1_l2 -
-                                patch0_center_coord) / (self.window_size // 2)
-                else:
-                    gt_r_w_pt1_l2 = data["expec_f_zs"][b_ids1_l1]
+            logger.info(f"pt1: {pt1.shape}")
 
-                F_1to0 = pose2fundamental(data['K1'], data['K0'], data['T_1to0'])
-                logger.info(f"gt_pt1_l2: {gt_r_w_pt1_l2.shape}, pt1: {pt1.shape}")
-                fine_loss1 = self._compute_fine_loss_l2(
-                    gt_r_w_pt1_l2,
-                    pt1,
-                    w_pt1,
-                    r_w_pt1,
-                    b_ids1_l1,
-                    std0,
-                    s1_l2,
-                    s0_l2,
-                    self.window_size * 0.5 * torch.norm(s0_l2, p=2),
-                    F_1to0,
-                )  # /2 0.8
-                if fine_loss1 is None:
-                    fine_loss1 = torch.zeros_like(cas_loss)
-            else:
+            w_pt1 = data['kpts0from1_l2'][p_mask1]  # * s0_l2
+            r_w_pt1 = data['relative_kpts0from1_l2'][p_mask1]
+            patch0_center_coord = data['patch0_center_coord_l2'][p_mask1]
+            std0 = data['std0'][p_mask1]
+            gt_w_pt1_l2 = spv_w_pt1_i_l2[b_ids1_l1, j_ids1_l1]
+            gt_r_w_pt1_l2 = (gt_w_pt1_l2 -
+                             patch0_center_coord) / (self.window_size // 2)
+
+            F_1to0 = pose2fundamental(data['K1'], data['K0'], data['T_1to0'])
+            fine_loss1 = self._compute_fine_loss_l2(
+                gt_r_w_pt1_l2,
+                pt1,
+                w_pt1,
+                r_w_pt1,
+                b_ids1_l1,
+                std0,
+                s1_l2,
+                s0_l2,
+                self.window_size * 0.5 * torch.norm(s0_l2, p=2),
+                F_1to0,
+            )  # /2 0.8
+            if fine_loss1 is None:
                 fine_loss1 = torch.zeros_like(cas_loss)
         else:
             fine_loss1 = torch.zeros_like(cas_loss)
@@ -506,8 +473,6 @@ class AdaMatcherLoss(nn.Module):
                 'loss': loss.clone().detach().cpu(),
             }
             data.update({'loss': loss, 'loss_scalars': loss_scalars})
-        
-        # logger.info(f"[{self.training}]loss value: {loss}")
 
 
 class LoFTRLoss(nn.Module):
