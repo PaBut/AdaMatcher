@@ -101,11 +101,11 @@ class MegaDepthDataset(Dataset):
                 img_name1, resize=(640, 480), augment_fn=None, rotation=rot1)
         else:
             image0, mask0, scale0, scale_wh0 = read_megadepth_color(
-                img_name0, self.img_resize, self.df, self.img_padding, None)
-            # np.random.choice([self.augment_fn, None], p=[0.5, 0.5]))
+                img_name0, self.img_resize, self.df, self.img_padding,
+            np.random.choice([self.augment_fn, None], p=[0.7, 0.3]))
             image1, mask1, scale1, scale_wh1 = read_megadepth_color(
-                img_name1, self.img_resize, self.df, self.img_padding, None)
-            # np.random.choice([self.augment_fn, None], p=[0.5, 0.5]))
+                img_name1, self.img_resize, self.df, self.img_padding, 
+            np.random.choice([self.augment_fn, None], p=[0.7, 0.3]))
         # read depth. shape: (h, w)
         if self.mode in ['train', 'val']:
             depth0 = read_megadepth_depth(
