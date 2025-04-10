@@ -18,7 +18,7 @@ from os.path import join, isdir, exists
 from torch.utils.data import Dataset
 
 from src.datasets.walk.utils import covision, intersected
-from src.adamatcher.utils.coarse_module import pt_to_grid
+# from src.adamatcher.utils.coarse_module import pt_to_grid
 from src.datasets.utils import read_images
 
 from loguru import logger
@@ -494,13 +494,13 @@ class WALKDataset(Dataset):
                    (right[:, 1] >= 0) & (right[:, 1]*self.scale <= (resize1[0]*self.scale - 1))
             left, right = left[mask], right[mask]
 
-            if p > t:
-                # noinspection PyArgumentList
-                mask = F.interpolate(mask1[None, None].float(), scale_factor=self.scale, mode='nearest', recompute_scale_factor=False)
-                grid1 = pt_to_grid(right.clone()[None] * self.scale, mask.shape[-2:])  # (1, 1, n, 2)
-                mask = F.grid_sample(mask, grid1, align_corners=True, mode='bilinear')  # [(1, c, 1, n)]
-                mask = mask[0, 0, 0] == 1
-                left, right = left[mask], right[mask]
+            # if p > t:
+            #     # noinspection PyArgumentList
+            #     mask = F.interpolate(mask1[None, None].float(), scale_factor=self.scale, mode='nearest', recompute_scale_factor=False)
+            #     grid1 = pt_to_grid(right.clone()[None] * self.scale, mask.shape[-2:])  # (1, 1, n, 2)
+            #     mask = F.grid_sample(mask, grid1, align_corners=True, mode='bilinear')  # [(1, c, 1, n)]
+            #     mask = mask[0, 0, 0] == 1
+            #     left, right = left[mask], right[mask]
 
             pseudo_label = torch.cat([left, right], dim=1)
             pseudo_label = torch.unique(pseudo_label, dim=0)
