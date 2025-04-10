@@ -358,7 +358,7 @@ class AdaMatcherLoss(nn.Module):
                 pt0 = data['kpts0_l2']  # * s0_l2
 
                 if data["gt"].sum() > 0:
-                    gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1].round().int()
+                    gt_pt0_l2 = spv_pt0_i_l2[b_ids0_l1, j_ids0_l1]
                 else:
                     gt_pt0_l2 = data["zs_pt0_f_float"][b_ids0_l1]
                     pt0 = pt0[data['m_bids']]
