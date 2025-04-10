@@ -445,7 +445,7 @@ class AdaMatcherLoss(nn.Module):
                     gt_r_w_pt1_l2 = data["expec_f_zs"][b_ids1_l1]
 
                 F_1to0 = pose2fundamental(data['K1'], data['K0'], data['T_1to0'])
-                logger.info(f"gt_pt1_l2: {gt_r_w_pt1_l2}, pt1: {pt1}")
+                logger.info(f"gt_pt1_l2: {gt_r_w_pt1_l2.shape}, pt1: {pt1.shape}")
                 fine_loss1 = self._compute_fine_loss_l2(
                     gt_r_w_pt1_l2,
                     pt1,
