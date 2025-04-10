@@ -89,7 +89,6 @@ class AdaMatcher(nn.Module):
         mask_feat0, mask_feat1, cas_score0, cas_score1 = self.feature_interaction(
             feat_c0,
             feat_c1,
-            data,
             data.get("mask0_d8", None),
             data.get("mask1_d8", None),
             use_cas=self.use_cas or self.training,
