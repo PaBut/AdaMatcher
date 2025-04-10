@@ -29,7 +29,7 @@ class AdaMatcher(nn.Module):
             config["coarse"]["d_model"], max_shape=(512, 512)
         )
         self.backbone = build_backbone(config)
-        self.feature_interaction = FICAS(config["resolution"])
+        self.feature_interaction = FICAS()
 
         self.coarse_module = CoarseModule(config["match_coarse"], config["resolution"])
         self.fine_module = FineModule(config["resolution"])

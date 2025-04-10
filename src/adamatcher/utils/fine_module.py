@@ -1,4 +1,3 @@
-from functools import partial
 import math
 import os
 
@@ -12,8 +11,6 @@ from kornia.utils.grid import create_meshgrid
 
 from src.adamatcher.backbone.feature_interaction import FeatureAttention
 from src.utils.plotting import make_matching_fine
-
-from loguru import logger
 
 # import pdb
 
@@ -102,15 +99,10 @@ class FineModule(nn.Module):
             1, 2).contiguous().squeeze(1))
         softmax_temp = 1.0  # 1. / C ** .5
         heatmap = torch.softmax(softmax_temp * heatmap, dim=1).view(-1, nW, nW)
-        # heatmap = heatmap_zs
-
-        # if heatmap_zs is not None:
-        #     heatmap = torch.cat([heatmap, heatmap_zs], dim=0)
 
         # compute coordinates from heatmap
         relative_kpts0from1 = dsnt.spatial_expectation2d(heatmap[None],
                                                          True)[0]  # [M, 2]
-        # logger.info("relative_kpts0from1 shape: {}".format(str(relative_kpts0from1.shape)))
         kpts0_from1_l2 = patch0_center_coord_l2 + relative_kpts0from1 * (
             W // 2)  # (W // 2)
 
@@ -118,49 +110,13 @@ class FineModule(nn.Module):
         grid_normalized = create_meshgrid(nW, nW,
                                           True, heatmap.device).reshape(
                                               1, -1, 2)  # [1, NWW, 2]
-        
-        # logger.info("heatmap shape: {}".format(str(heatmap.shape)))
-
         var = (
             torch.sum(grid_normalized**2 * heatmap.view(-1, NWW, 1), dim=1) -
-            relative_kpts0from1**2)#[m_bids]  # [M, 2]
-        # logger.info("var shape: {}".format(str(var.shape)))
+            relative_kpts0from1**2)  # [M, 2]
         std = torch.sum(torch.sqrt(torch.clamp(var, min=1e-10)),
                         -1)  # [M]  clamp needed for numerical stability
 
         return relative_kpts0from1, kpts0_from1_l2, std
-    
-    def compute_zeroshot_fine_loss(self, feat_f0, feat_f1, radius, W, data):
-        M, WW, C = feat_f0.shape
-        Nz = len(data['zs_b_ids']) if 'zs_b_ids' in data else 0
-        Ng = len(data['b_ids']) if 'b_ids' in data else 0
-        # logger.info(f"Nz, Ng: {Nz}, {Ng}")
-        pt0_f_int = data['zs_pt0_f_int']
-        pt0_f_float = data['zs_pt0_f_float']  # (Nz, 2) in hw_f coordinates
-        pt_x = (pt0_f_float[:, 0] - pt0_f_int[:, 0]) / radius
-        pt_y = (pt0_f_float[:, 1] - pt0_f_int[:, 1]) / radius
-        grid = torch.stack([pt_x, pt_y], dim=1)[:, None, None]  # (Nz, 1, 1, 2)
-        grid_sample = partial(F.grid_sample, align_corners=True, mode='bilinear')
-        feat_f0_picked = rearrange(feat_f0[-Nz:], 'n (h w) c -> n c h w', h=W, w=W)
-        feat_f0_picked = grid_sample(feat_f0_picked, grid).squeeze()  # [(Nz, c)]
-        sim_matrix = torch.einsum('mc,mrc->mr', feat_f0_picked, feat_f1[-Nz:])  # (Nz, ww)
-        softmax_temp = 1. / C ** .5
-        heatmap_z = torch.softmax(softmax_temp * sim_matrix, dim=1).view(-1, W, W)  # (Nz, w, w)
-
-        self.spvc_zeroshot_fine(radius, data)
-
-        return heatmap_z
-
-    @torch.no_grad()
-    def spvc_zeroshot_fine(self, radius, data):
-        pt1_f_int = data['zs_pt1_f_int']
-        pt1_f_float = data['zs_pt1_f_float']
-        # logger.info(f"pt1_f_int, pt1_f_float: {pt1_f_int}, {pt1_f_float}")
-        expec_f_zs = (pt1_f_float - pt1_f_int) / radius
-        # if "expec_f_zs" in data:
-        #     data.update({"expec_f_zs": torch.cat([expec_f_zs, data["expec_f_zs"]])})
-        # else:
-        data.update({"expec_f_zs": expec_f_zs})
 
     def forward(
         self,
@@ -178,70 +134,33 @@ class FineModule(nn.Module):
         m_bids = data['m_bids']
         patch_size_l1l2 = self.scale_l1 // self.scale_l2
 
-        feat_map1_unfold_pre_pre = F.unfold(
+        feat_map1_unfold = F.unfold(
             feat_d2_1,
             kernel_size=(self.W, self.W),
             stride=patch_size_l1l2,
             padding=self.W // 2,
         ).contiguous()
-        feat_map1_unfold_pre = rearrange(feat_map1_unfold_pre_pre,
+        feat_map1_unfold = rearrange(feat_map1_unfold,
                                      'n (c ww) l -> n l ww c',
                                      ww=self.W**2).contiguous()
-        feat_map1_unfold = rearrange(feat_map1_unfold_pre,
+        feat_map1_unfold = rearrange(feat_map1_unfold,
                                      'n l (w1 w2) c -> n l w1 w2 c',
                                      w1=self.W,
                                      w2=self.W).contiguous()
 
-        feat_map0_unfold_pre_pre = F.unfold(
+        feat_map0_unfold = F.unfold(
             feat_d2_0,
             kernel_size=(self.W, self.W),
             stride=patch_size_l1l2,
             padding=self.W // 2,
         ).contiguous()
-        feat_map0_unfold_pre = rearrange(feat_map0_unfold_pre_pre,
+        feat_map0_unfold = rearrange(feat_map0_unfold,
                                      'n (c ww) l -> n l ww c',
                                      ww=self.W**2).contiguous()
-        feat_map0_unfold = rearrange(feat_map0_unfold_pre,
+        feat_map0_unfold = rearrange(feat_map0_unfold,
                                      'n l (w1 w2) c -> n l w1 w2 c',
                                      w1=self.W,
                                      w2=self.W).contiguous()
-        
-
-
-        if data['zs'].sum():
-            W = self.W
-            radius = W // 2
-            zs = data['zs']
-            pt0_i = data['zs_pt0_i']
-            pt1_i = data['zs_pt1_i']
-            # logger.info(f"pt0_i, pt1_i: {pt0_i.shape}, {pt1_i.shape}")
-            zs_b_ids = data['zs_b_ids']
-            scale_c = data['hw0_i'][0] / data['hw0_c'][0]  # 8.0
-            scale_f = data['hw0_i'][0] / data['hw0_f'][0]  # 2.0
-            pt0_c_int = (pt0_i / scale_c).round().long()
-            pt1_c_int = (pt1_i / scale_c).round().long()
-            pt0_f_int = pt0_c_int * patch_size_l1l2 # stride
-            pt1_f_int = pt1_c_int * patch_size_l1l2 # stride
-            pt0_f_float = pt0_i / scale_f
-            pt1_f_float = pt1_i / scale_f
-            indices = ((pt0_f_float[:, 0] - pt0_f_int[:, 0]).abs() <= radius) & \
-                      ((pt0_f_float[:, 1] - pt0_f_int[:, 1]).abs() <= radius) & \
-                      ((pt1_f_float[:, 0] - pt1_f_int[:, 0]).abs() <= radius) & \
-                      ((pt1_f_float[:, 1] - pt1_f_int[:, 1]).abs() <= radius)
-            zs_ci_ids = pt0_c_int[:, 0] + pt0_c_int[:, 1] * data['hw0_c'][1]
-            zs_cj_ids = pt1_c_int[:, 0] + pt1_c_int[:, 1] * data['hw1_c'][1]
-            feat_f0_z = feat_map0_unfold_pre[zs][zs_b_ids[indices], zs_ci_ids[indices]]  # [n, ww, cf]
-            feat_f1_z = feat_map1_unfold_pre[zs][zs_b_ids[indices], zs_cj_ids[indices]]  #TODO: leverage
-
-            data.update({
-                'zs_b_ids': zs_b_ids[indices],
-                'zs_cj_ids': zs_cj_ids[indices],
-                'zs_ci_ids': zs_ci_ids[indices],
-                'zs_pt0_f_int': pt0_f_int[indices],
-                'zs_pt1_f_int': pt1_f_int[indices],
-                'zs_pt0_f_float': pt0_f_float[indices],
-                'zs_pt1_f_float': pt1_f_float[indices],
-            })
 
         hw1_d2, hw0_d2 = data['hw1_d2'], data['hw0_d2']
         overlap_scores0 = data['overlap_scores0']
@@ -283,127 +202,53 @@ class FineModule(nn.Module):
                 bs_kpts0from1_l1 = kpts0from1_l1[bs_mask]
 
                 if len(bs_j_ids1_l1) > 0:
-                    if data["zs"].sum() > 0:
-                        # level2 kpts
-                        bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
-                        # bs_kpts1_l2 = pt0_f_int
-                        # bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
-                        bs_patch0_center_coord_l2 = data["zs_pt0_f_float"]
+                    # level2 kpts
+                    bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
+                    bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
 
-                        # fine level feature
-                        bs_kptsfeat1 = feat_map1_unfold[bs_b_ids1_l1,
-                                                        bs_j_ids1_l1].flatten(
-                                                            1, 2)  # [k, ww, c]
-                        bs_kptsfeat0_from1 = feat_map0_unfold[
-                            bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
-                                                                2)  # [k, nwnw, c]
-                        feat_d8 = [
-                            # feat_f0_z,
-                            # feat_f1_z
+                    # fine level feature
+                    bs_kptsfeat1 = feat_map1_unfold[bs_b_ids1_l1,
+                                                    bs_j_ids1_l1].flatten(
+                                                        1, 2)  # [k, ww, c]
+                    bs_kptsfeat0_from1 = feat_map0_unfold[
+                        bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
+                                                            2)  # [k, nwnw, c]
+                    bs_feat_c = self.down_proj(
+                        torch.cat(
+                            [
+                                feat_d8_0[bs_b_ids1_l1, bs_i_ids1_l1],
+                                feat_d8_1[bs_b_ids1_l1, bs_j_ids1_l1],
+                            ],
+                            dim=0,
+                        ))  # [2n, 2c->c]
+                    bs_feat_cf = self.merge_feat(
+                        torch.cat(
+                            [
+                                torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
+                                          0),
+                                repeat(
+                                    bs_feat_c, 'n c -> n ww c', ww=self.W**2),
+                            ],
+                            -1,
+                        ))
+                    bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
+                                                                   2,
+                                                                   dim=0)
+                    ###########################################################################
+                    bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
+                        bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)
 
-                            data['zs_feat_c0'],
-                            data['zs_feat_c1']
-                        ]
-                        # if data["zs"].sum() > 0:
-                        #     # feat_d8.append(feat_f0_z.flatten(1, 2))
-                        #     # feat_d8.append(feat_f1_z.flatten(1, 2))
-                        #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
-                        #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
-
-                        # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, , {torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],0).shape}")
-
-                        bs_feat_c = self.down_proj(
-                            torch.cat(feat_d8, dim=0)
-                        )  # [2n, 2c->c]
-
-                        # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
-                        
-                        bs_feat_cf = self.merge_feat(
-                            torch.cat(
-                                [
-                                    # torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
-                                    #           0),
-                                    torch.cat([
-                                        feat_f0_z,
-                                        feat_f1_z
-                                    ], dim=0),  # [n+m+n+m, ww, cf]
-                                    repeat(
-                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
-                                ],
-                                -1,
-                            ))
-                        bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
-                                                                    2,
-                                                                    dim=0)
-                        # logger.info(f"1) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
-                        ###########################################################################
-                        bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
-                            bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)   
-
-                        # logger.info(f"2) bs_kptsfeat0_from1, bs_kptsfeat1: {bs_kptsfeat0_from1.shape}, {bs_kptsfeat1.shape}")
-
-                        heatmap_zs = None
-                        if data["zs"].sum() > 0:
-                            heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat0_from1, bs_kptsfeat1, radius, W, data)
-
-                        (
-                            bs_relative_kpts0from1_l2,
-                            bs_kpts0from1_l2,
-                            bs_std0,
-                        ) = self.get_expected_locs(
-                            bs_kptsfeat1,
-                            bs_kptsfeat0_from1,
-                            bs_patch0_center_coord_l2,
-                            o_scale0,
-                            flag=self.post_scale
-                        )
-                    if data["gt"].sum() > 0:
-                        bs_kpts1_l2 = bs_kpts1_l1 * self.scale_l1l2
-                        bs_patch0_center_coord_l2 = bs_kpts0from1_l1 * self.scale_l1l2
-
-                        # fine level feature
-                        bs_kptsfeat1 = feat_map1_unfold[bs_b_ids1_l1,
-                                                        bs_j_ids1_l1].flatten(
-                                                            1, 2)  # [k, ww, c]
-                        bs_kptsfeat0_from1 = feat_map0_unfold[
-                            bs_b_ids1_l1, bs_i_ids1_l1].flatten(1,
-                                                                2)  # [k, nwnw, c]
-                        bs_feat_c = self.down_proj(
-                            torch.cat(
-                                [
-                                    feat_d8_0[bs_b_ids1_l1, bs_i_ids1_l1],
-                                    feat_d8_1[bs_b_ids1_l1, bs_j_ids1_l1],
-                                ],
-                                dim=0,
-                            ))  # [2n, 2c->c]
-                        bs_feat_cf = self.merge_feat(
-                            torch.cat(
-                                [
-                                    torch.cat([bs_kptsfeat0_from1, bs_kptsfeat1],
-                                            0),
-                                    repeat(
-                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
-                                ],
-                                -1,
-                            ))
-                        bs_kptsfeat0_from1, bs_kptsfeat1 = torch.chunk(bs_feat_cf,
-                                                                    2,
-                                                                    dim=0)
-                        ###########################################################################
-                        bs_kptsfeat1, bs_kptsfeat0_from1 = self.attention(
-                            bs_kptsfeat1, bs_kptsfeat0_from1, flag=1)
-
-                        (
-                            bs_relative_kpts0from1_l2,
-                            bs_kpts0from1_l2,
-                            bs_std0,
-                        ) = self.get_expected_locs(
-                            bs_kptsfeat1,
-                            bs_kptsfeat0_from1,
-                            bs_patch0_center_coord_l2,
-                            o_scale0,
-                            flag=self.post_scale,
-                        )
+                    (
+                        bs_relative_kpts0from1_l2,
+                        bs_kpts0from1_l2,
+                        bs_std0,
+                    ) = self.get_expected_locs(
+                        bs_kptsfeat1,
+                        bs_kptsfeat0_from1,
+                        bs_patch0_center_coord_l2,
+                        o_scale0,
+                        flag=self.post_scale,
+                    )
 
                     bs_i_ids1_l2 = (
                         bs_patch0_center_coord_l2[:, 0] +
@@ -430,123 +275,50 @@ class FineModule(nn.Module):
                 bs_kpts1from0_l1 = kpts1from0_l1[bs_mask]
 
                 if len(bs_j_ids0_l1) > 0:
-                    if data["zs"].sum() > 0:
-                        bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
-                        # bs_kpts0_l2 = pt0_f_int
-                        # bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
-                        bs_patch1_center_coord_l2 = data["zs_pt1_f_float"]
-                        # fine level featur0
-                        bs_kptsfeat0 = feat_map0_unfold[bs_b_ids0_l1,
-                                                        bs_j_ids0_l1].flatten(
-                                                            1, 2)  # [k, ww, c]
-                        bs_kptsfeat1_from0 = feat_map1_unfold[
-                            bs_b_ids0_l1, bs_i_ids0_l1].flatten(1,
-                                                                2)  # [k, nwnw, c]
+                    bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
+                    bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
 
-                        feat_d8 = [
-                            # feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
-                            # feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
-                            
-                            # feat_f0_z,
-                            # feat_f1_z
+                    # fine level featur0
+                    bs_kptsfeat0 = feat_map0_unfold[bs_b_ids0_l1,
+                                                    bs_j_ids0_l1].flatten(
+                                                        1, 2)  # [k, ww, c]
+                    bs_kptsfeat1_from0 = feat_map1_unfold[
+                        bs_b_ids0_l1, bs_i_ids0_l1].flatten(1,
+                                                            2)  # [k, nwnw, c]
 
-                            data['zs_feat_c0'],
-                            data['zs_feat_c1']
-                        ]
-                        # if data["zs"].sum() > 0:
-                        #     # feat_d8.append(feat_f0_z.flatten(1, 2))
-                        #     # feat_d8.append(feat_f1_z.flatten(1, 2))
-                        #     feat_d8.append(feat_f0_z[zs_b_ids[indices], zs_ci_ids[indices]])
-                        #     feat_d8.append(feat_f1_z[zs_b_ids[indices], zs_ci_ids[indices]])
+                    bs_feat_c = self.down_proj(
+                        torch.cat([
+                            feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
+                            feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
+                        ]))
+                    bs_feat_cf = self.merge_feat(
+                        torch.cat(
+                            [
+                                torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
+                                          0),
+                                repeat(
+                                    bs_feat_c, 'n c -> n ww c', ww=self.W**2),
+                            ],
+                            -1,
+                        ))
+                    bs_kptsfeat0, bs_kptsfeat1_from0 = torch.chunk(bs_feat_cf,
+                                                                   2,
+                                                                   dim=0)
+                    ######################################################################################
+                    bs_kptsfeat0, bs_kptsfeat1_from0 = self.attention(
+                        bs_kptsfeat0, bs_kptsfeat1_from0, flag=1)
 
-                        bs_feat_c = self.down_proj(
-                            torch.cat(feat_d8, dim=0)
-                        )  # [2n, 2c->c]
-
-                        # logger.info(f"feat_d8 shapes: {[feat.shape for feat in feat_d8]}, {torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],0).shape}")
-                        # logger.info(f"bs_feat_c: {bs_feat_c.shape}")
-                        
-                        bs_feat_cf = self.merge_feat(
-                            torch.cat(
-                                [
-                                    # torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
-                                    #           0),
-                                    torch.cat([
-                                        feat_f1_z,
-                                        feat_f0_z
-                                    ], dim=0),
-                                    repeat(
-                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
-                                ],
-                                -1,
-                            ))
-                        bs_kptsfeat0, bs_kptsfeat1_from0 = torch.chunk(bs_feat_cf,
-                                                                    2,
-                                                                    dim=0)
-                        ######################################################################################
-                        bs_kptsfeat0, bs_kptsfeat1_from0 = self.attention(
-                            bs_kptsfeat0, bs_kptsfeat1_from0, flag=1)
-                        
-                        heatmap_zs = None
-                        if data["zs"].sum() > 0:
-                            heatmap_zs = self.compute_zeroshot_fine_loss(bs_kptsfeat1_from0, bs_kptsfeat0, radius, W, data)
-
-                        (
-                            bs_relative_kpts1from0_l2,
-                            bs_kpts1from0_l2,
-                            bs_std1,
-                        ) = self.get_expected_locs(
-                            bs_kptsfeat0,
-                            bs_kptsfeat1_from0,
-                            bs_patch1_center_coord_l2,
-                            o_scale1,
-                            flag=self.post_scale,
-                        )
-                    if data["gt"].sum() > 0:
-                        bs_kpts0_l2 = bs_kpts0_l1 * self.scale_l1l2
-                        bs_patch1_center_coord_l2 = bs_kpts1from0_l1 * self.scale_l1l2
-
-                        # fine level featur0
-                        bs_kptsfeat0 = feat_map0_unfold[bs_b_ids0_l1,
-                                                        bs_j_ids0_l1].flatten(
-                                                            1, 2)  # [k, ww, c]
-                        bs_kptsfeat1_from0 = feat_map1_unfold[
-                            bs_b_ids0_l1, bs_i_ids0_l1].flatten(1,
-                                                                2)  # [k, nwnw, c]
-
-                        bs_feat_c = self.down_proj(
-                            torch.cat([
-                                feat_d8_0[bs_b_ids0_l1, bs_j_ids0_l1],
-                                feat_d8_1[bs_b_ids0_l1, bs_i_ids0_l1],
-                            ]))
-                        bs_feat_cf = self.merge_feat(
-                            torch.cat(
-                                [
-                                    torch.cat([bs_kptsfeat0, bs_kptsfeat1_from0],
-                                            0),
-                                    repeat(
-                                        bs_feat_c, 'n c -> n ww c', ww=self.W**2),
-                                ],
-                                -1,
-                            ))
-                        bs_kptsfeat0, bs_kptsfeat1_from0 = torch.chunk(bs_feat_cf,
-                                                                    2,
-                                                                    dim=0)
-                        ######################################################################################
-                        bs_kptsfeat0, bs_kptsfeat1_from0 = self.attention(
-                            bs_kptsfeat0, bs_kptsfeat1_from0, flag=1)
-
-                        (
-                            bs_relative_kpts1from0_l2,
-                            bs_kpts1from0_l2,
-                            bs_std1,
-                        ) = self.get_expected_locs(
-                            bs_kptsfeat0,
-                            bs_kptsfeat1_from0,
-                            bs_patch1_center_coord_l2,
-                            o_scale1,
-                            flag=self.post_scale,
-                        )
+                    (
+                        bs_relative_kpts1from0_l2,
+                        bs_kpts1from0_l2,
+                        bs_std1,
+                    ) = self.get_expected_locs(
+                        bs_kptsfeat0,
+                        bs_kptsfeat1_from0,
+                        bs_patch1_center_coord_l2,
+                        o_scale1,
+                        flag=self.post_scale,
+                    )
 
                     bs_i_ids0_l2 = (
                         bs_patch1_center_coord_l2[:, 0] +
@@ -569,17 +341,16 @@ class FineModule(nn.Module):
             torch.cat(kpts1_l2, dim=0) if len(b_ids1_l1) else torch.empty(
                 0, 2, device=self.device, dtype=torch.long),
             'kpts0from1_l2':
-            torch.cat(kpts0from1_l2, dim=0)#[m_bids]
+            torch.cat(kpts0from1_l2, dim=0)
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'relative_kpts0from1_l2':
-            torch.cat(relative_kpts0from1_l2, dim=0)#[m_bids]
+            torch.cat(relative_kpts0from1_l2, dim=0)
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'patch0_center_coord_l2':
-            torch.cat(patch0_center_coord_l2, dim=0)#[m_bids]
+            torch.cat(patch0_center_coord_l2, dim=0)
             if len(b_ids1_l1) else torch.empty(0, 2, device=self.device),
             'std0':
-            torch.cat(std0, dim=0)#[m_bids]
-            if len(b_ids1_l1) else torch.empty(
+            torch.cat(std0, dim=0) if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids1_l2':
             b_ids1_l1.clone() if len(b_ids1_l1) else torch.empty(
@@ -591,9 +362,7 @@ class FineModule(nn.Module):
             torch.cat(j_ids1_l2, dim=0) if len(b_ids1_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
         })
-        # logger.info(f"relative_kpts0from1_l2: {data['relative_kpts0from1_l2'].shape}")
         if len(b_ids1_l1):
-            # logger.info(f"kpts1_l2, kpts0from1_l2: {data['kpts1_l2'].shape}, {data['kpts0from1_l2'].shape}")
             pts0.append(data['kpts0from1_l2'])
             pts1.append(data['kpts1_l2'])
 
@@ -602,17 +371,16 @@ class FineModule(nn.Module):
             torch.cat(kpts0_l2, dim=0) if len(b_ids0_l1) else torch.empty(
                 0, 2, device=self.device, dtype=torch.long),
             'kpts1from0_l2':
-            torch.cat(kpts1from0_l2, dim=0)#[m_bids]
+            torch.cat(kpts1from0_l2, dim=0)
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'relative_kpts1from0_l2':
-            torch.cat(relative_kpts1from0_l2, dim=0)#[m_bids]
+            torch.cat(relative_kpts1from0_l2, dim=0)
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'patch1_center_coord_l2':
-            torch.cat(patch1_center_coord_l2, dim=0)#[m_bids]
+            torch.cat(patch1_center_coord_l2, dim=0)
             if len(b_ids0_l1) else torch.empty(0, 2, device=self.device),
             'std1':
-            torch.cat(std1, dim=0)#[m_bids]
-              if len(b_ids0_l1) else torch.empty(
+            torch.cat(std1, dim=0) if len(b_ids0_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
             'b_ids0_l2':
             b_ids0_l1.clone() if len(b_ids0_l1) else torch.empty(
@@ -624,10 +392,7 @@ class FineModule(nn.Module):
             torch.cat(j_ids0_l2, dim=0) if len(b_ids0_l1) else torch.empty(
                 0, device=self.device, dtype=torch.long),
         })
-        # logger.info(f"std0: {data['std0'].shape}, std1: {data['std1'].shape}")
         if len(b_ids0_l1):
-            # logger.info(f"relative_kpts1from0_l2: {data['relative_kpts1from0_l2'].shape}")
-            # logger.info(f"kpts0_l2, kpts1from0_l2: {data['kpts0_l2'].shape}, {data['kpts1from0_l2'].shape}")
             pts1.append(data['kpts1from0_l2'])
             pts0.append(data['kpts0_l2'])
 
@@ -640,19 +405,12 @@ class FineModule(nn.Module):
             pts0 = torch.empty(0, 2, device=self.device)
 
         if len(m_bids) != 0:
-            scale1_l2 = (self.scale_l2 * data['scale1']#[m_bids]
+            scale1_l2 = (self.scale_l2 * data['scale1'][m_bids]
                          if 'scale1' in data else self.scale_l2)
-            scale0_l2 = (self.scale_l2 * data['scale0']#[m_bids]
+            scale0_l2 = (self.scale_l2 * data['scale0'][m_bids]
                          if 'scale0' in data else self.scale_l2)
         else:
             scale1_l2 = scale0_l2 = 0.0
-
-        # logger.info(f"pts0, pts1: {pts0.shape}, {pts1.shape}")
-
-        if data["zs"].sum() > 0 and "expec_f_zs" in data:
-            data.update({
-                "expec_f_zs": data["expec_f_zs"][m_bids]
-            })
 
         data.update({
             'mkpts0_f':
