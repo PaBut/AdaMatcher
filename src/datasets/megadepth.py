@@ -15,7 +15,7 @@ from src.utils.dataset import (read_megadepth_color, read_megadepth_depth,
                                read_megadepth_gray, read_scannet_color)
 
 
-def get_rotation_matrix_2d(angle_degrees):
+def get_rotation_matrix_2d(angle_degrees, device):
     theta = math.radians(angle_degrees)
     cos_theta = math.cos(theta)
     sin_theta = math.sin(theta)
@@ -24,7 +24,7 @@ def get_rotation_matrix_2d(angle_degrees):
         [cos_theta, -sin_theta, 0],
         [sin_theta,  cos_theta, 0],
         [0,          0,         1]
-    ], dtype=torch.float32)
+    ], dtype=torch.float32, device=device)
     
     return Rz
 
@@ -39,7 +39,7 @@ def apply_rotation_matrix_pose(pose, matrix):
     return torch.tensor(pose_new, dtype=torch.float32, device=pose.device)
 
 def rotate_pose(pose, angle_deg):
-    Rz = get_rotation_matrix_2d(angle_deg)
+    Rz = get_rotation_matrix_2d(angle_deg, pose.device)
     
     return apply_rotation_matrix_pose(pose, Rz)
 
