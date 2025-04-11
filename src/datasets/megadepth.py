@@ -189,22 +189,22 @@ class MegaDepthDataset(Dataset):
             
             if random.random() < 0.3:
                 if random.random() < 0.85:
-                    matrix = np.array([
+                    matrix = torch.tensor([
                         [-1,  0, 0],
                         [ 0,  1, 0],
                         [ 0,  0, 1]
-                    ], dtype=np.float32)
+                    ], dtype=torch.float32, device=image0.device)
                     
                     K_0[0, 2] = scale_wh0[0] - 1 - K_0[0, 2]
                     K_1[0, 2] = scale_wh0[0] - 1 - K_1[0, 2]
 
                     flip = patrial(KT.hflip)
                 else: 
-                    matrix = np.array([
+                    matrix = torch.tensor([
                         [1,  0, 0],
                         [0, -1, 0],
                         [0,  0, 1]
-                    ], dtype=np.float32)
+                    ], dtype=torch.float32, device=image0.device)
                     
                     K_0[1, 2] = scale_wh0[1] - 1 - K_0[1, 2]
                     K_1[1, 2] = scale_wh0[1] - 1 - K_1[1, 2]
