@@ -168,6 +168,7 @@ class MegaDepthDataset(Dataset):
         if self.geometric_augmentation:
                 
             if random.random() < 0.2:
+                logger.info(f'{image0.shape}')
                 rotation = np.random.uniform(-40, 40)
                 rotate = patrial(KT.rotate, angle=torch.tensor([rotation], device=image0.device),
                                   center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
