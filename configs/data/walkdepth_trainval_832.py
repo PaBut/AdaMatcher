@@ -39,7 +39,8 @@ _CN.DATASET.TEST_LIST_PATH = f"{TEST_BASE_PATH}/aachen.txt"
 # (with difficulty balanced (further split each scene to 3 sub-scenes))
 _CN.TRAINER.N_SAMPLES_PER_SUBSET = 100
 
-_CN.DATASET.MGDPT_IMG_RESIZE = 832
+_CN.DATASET.MGDPT_IMG_RESIZE = 720
+_CN.DATASET.GEOMETRIC_AUGMENTATION = True
 _CN.DATASET.AUGMENTATION_TYPE = 'low_light'  # options: [None, 'dark', 'mobile']
 
 cfg = _CN
