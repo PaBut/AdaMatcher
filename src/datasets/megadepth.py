@@ -36,7 +36,7 @@ def apply_rotation_matrix_pose(pose, matrix):
     pose_new = torch.eye(4)
     pose_new[:3, :3] = R_new
     pose_new[:3, 3] = t
-    return pose_new
+    return torch.tensor(pose_new, dtype=torch.float32, device=pose.device)
 
 def rotate_pose(pose, angle_deg):
     Rz = get_rotation_matrix_2d(angle_deg)
