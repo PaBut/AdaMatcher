@@ -193,7 +193,7 @@ class MegaDepthDataset(Dataset):
                         [-1,  0, 0],
                         [ 0,  1, 0],
                         [ 0,  0, 1]
-                    ], dtype=torch.float32)
+                    ], dtype=np.float32)
                     
                     K_0[0, 2] = scale_wh0[0] - 1 - K_0[0, 2]
                     K_1[0, 2] = scale_wh0[0] - 1 - K_1[0, 2]
@@ -204,7 +204,7 @@ class MegaDepthDataset(Dataset):
                         [1,  0, 0],
                         [0, -1, 0],
                         [0,  0, 1]
-                    ], dtype=torch.float32)
+                    ], dtype=np.float32)
                     
                     K_0[1, 2] = scale_wh0[1] - 1 - K_0[1, 2]
                     K_1[1, 2] = scale_wh0[1] - 1 - K_1[1, 2]
