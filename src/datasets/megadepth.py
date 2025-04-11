@@ -166,7 +166,7 @@ class MegaDepthDataset(Dataset):
         T1 = self.scene_info['poses'][idx1]
 
         if self.geometric_augmentation:
-            if random.random() < 0.3:
+            if random.random() < 0.2:
                 rotation = np.random.uniform(-40, 40)
                 rotate = patrial(KT.rotate, torch.tensor([rotation], device=image0.device),
                                   center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
@@ -184,24 +184,24 @@ class MegaDepthDataset(Dataset):
                 T0 = rotate_pose(T0, rotation)
                 T1 = rotate_pose(T1, rotation)
             
-            if random.random() < 0.4:
-                if random.random() < 0.8:
-                    matrix = torch.tensor([
+            if random.random() < 0.3:
+                if random.random() < 0.85:
+                    matrix = np.array([
                         [-1,  0, 0],
                         [ 0,  1, 0],
                         [ 0,  0, 1]
-                    ], dtype=torch.float32, device=image0.device)
+                    ], dtype=torch.float32)
                     
                     K_0[0, 2] = scale_wh0[0] - 1 - K_0[0, 2]
                     K_1[0, 2] = scale_wh0[0] - 1 - K_1[0, 2]
 
                     flip = patrial(KT.hflip)
                 else: 
-                    matrix = torch.tensor([
+                    matrix = np.array([
                         [1,  0, 0],
                         [0, -1, 0],
                         [0,  0, 1]
-                    ], dtype=torch.float32, device=image0.device)
+                    ], dtype=torch.float32)
                     
                     K_0[1, 2] = scale_wh0[1] - 1 - K_0[1, 2]
                     K_1[1, 2] = scale_wh0[1] - 1 - K_1[1, 2]
