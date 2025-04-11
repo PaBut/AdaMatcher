@@ -174,9 +174,8 @@ class MegaDepthDataset(Dataset):
                                   center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
                                                        dtype=torch.float32, device=image0.device))
 
-                image0 = rotate(image0)
-
-                image1 = rotate(image1)
+                image0 = rotate(image0.unsqueeze(0)).squeeze(0)
+                image1 = rotate(image1.unsqueeze(0)).squeeze(0)
 
                 depth0 = rotate(depth0)
                 depth1 = rotate(depth1)
