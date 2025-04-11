@@ -137,10 +137,10 @@ class MegaDepthDataset(Dataset):
         else:
             image0, mask0, scale0, scale_wh0 = read_megadepth_color(
                 img_name0, self.img_resize, self.df, self.img_padding,
-            np.random.choice([self.augment_fn, None], p=[0.7, 0.3]))
+            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]))
             image1, mask1, scale1, scale_wh1 = read_megadepth_color(
                 img_name1, self.img_resize, self.df, self.img_padding, 
-            np.random.choice([self.augment_fn, None], p=[0.7, 0.3]))
+            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]))
         # read depth. shape: (h, w)
         if self.mode in ['train', 'val']:
             depth0 = read_megadepth_depth(
@@ -171,6 +171,9 @@ class MegaDepthDataset(Dataset):
                 rotate = patrial(KT.rotate, torch.tensor([rotation], device=image0.device),
                                   center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
                                                        dtype=torch.float32, device=image0.device))
+                
+                if image0.shape[0] == 1:
+                    logger.info(f"{self.scene_info['image_paths'][idx0]}")
 
                 image0 = rotate(image0)
                 image1 = rotate(image1)
