@@ -169,16 +169,12 @@ class MegaDepthDataset(Dataset):
                 
             if random.random() < 0.2:
                 rotation = np.random.uniform(-40, 40)
-                rotate = patrial(KT.rotate, torch.tensor([rotation], device=image0.device),
+                rotate = patrial(KT.rotate, angle=torch.tensor([rotation], device=image0.device),
                                   center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
                                                        dtype=torch.float32, device=image0.device))
 
-                try:
-                    image0 = rotate(image0)
-                except:
-                    logger.info(f"{self.scene_id}, {self.scene_info['image_paths'][idx0]}")
-                    logger.info(f"{image0}")
-                    raise
+                image0 = rotate(image0)
+
                 image1 = rotate(image1)
 
                 depth0 = rotate(depth0)
