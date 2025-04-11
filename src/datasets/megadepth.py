@@ -167,9 +167,9 @@ class MegaDepthDataset(Dataset):
 
         if self.geometric_augmentation:
 
-            # if image0.shape[0] == 1 or len(image0.shape) == 1:
-            logger.info(f"{self.scene_id}, {self.scene_info['image_paths'][idx0]}")
-            # logger.info(f"{image0}")
+            if image0.shape[0] == 1 or len(image0.shape) == 1:
+                logger.info(f"{self.scene_id}, {self.scene_info['image_paths'][idx0]}")
+                logger.info(f"{image0}")
                 
             if random.random() < 0.2:
                 rotation = np.random.uniform(-40, 40)
