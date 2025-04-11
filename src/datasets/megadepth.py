@@ -166,10 +166,6 @@ class MegaDepthDataset(Dataset):
         T1 = self.scene_info['poses'][idx1]
 
         if self.geometric_augmentation:
-
-            if image0.shape[0] == 1 or len(image0.shape) == 1:
-                logger.info(f"{self.scene_id}, {self.scene_info['image_paths'][idx0]}")
-                logger.info(f"{image0}")
                 
             if random.random() < 0.2:
                 rotation = np.random.uniform(-40, 40)
@@ -177,7 +173,12 @@ class MegaDepthDataset(Dataset):
                                   center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
                                                        dtype=torch.float32, device=image0.device))
 
-                image0 = rotate(image0)
+                try:
+                    image0 = rotate(image0)
+                except:
+                    logger.info(f"{self.scene_id}, {self.scene_info['image_paths'][idx0]}")
+                    logger.info(f"{image0}")
+                    raise
                 image1 = rotate(image1)
 
                 depth0 = rotate(depth0)
