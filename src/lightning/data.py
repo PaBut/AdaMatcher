@@ -72,6 +72,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
         self.mgdpt_img_pad = config.DATASET.MGDPT_IMG_PAD  # True
         self.mgdpt_depth_pad = config.DATASET.MGDPT_DEPTH_PAD  # True
         self.mgdpt_df = config.DATASET.MGDPT_DF  # 8
+        self.geometric_augmentation = config.DATASET.GEOMETRIC_AUGMENTATION 
         self.coarse_scale = (1 / config.ADAMATCHER.RESOLUTION[0]
                              )  # 0.125. for training adamatcher.
         
@@ -294,6 +295,7 @@ class MultiSceneDataModule(pl.LightningDataModule):
                         augment_fn=augment_fn,
                         coarse_scale=self.coarse_scale,
                         walk_depth=walk_depth,
+                        geometric_augmentation=self.geometric_augmentation if mode == 'train' else False
                     ))
             elif data_source == 'Walk':
                 datasets.append(

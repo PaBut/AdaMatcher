@@ -137,6 +137,7 @@ _CN.DATASET.MGDPT_IMG_RESIZE = (
 _CN.DATASET.MGDPT_IMG_PAD = True  # pad img to square with size = MGDPT_IMG_RESIZE
 _CN.DATASET.MGDPT_DEPTH_PAD = True  # pad depthmap to square with size = 2000
 _CN.DATASET.MGDPT_DF = _CN.ADAMATCHER.RESOLUTION[0]  # 8  64
+_CN.DATASET.GEOMETRIC_AUGMENTATION = False  # whether to use geometric augmentation
 
 ##############  Trainer  ##############
 _CN.TRAINER = CN()

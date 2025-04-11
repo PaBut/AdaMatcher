@@ -1,14 +1,47 @@
+import math
 import os.path as osp
 import pdb
+import random
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+import kornia.geometry.transform as KT
 from loguru import logger
 from torch.utils.data import Dataset
+from functools import partial as patrial
 
 from src.utils.dataset import (read_megadepth_color, read_megadepth_depth,
                                read_megadepth_gray, read_scannet_color)
+
+
+def get_rotation_matrix_2d(angle_degrees):
+    theta = math.radians(angle_degrees)
+    cos_theta = math.cos(theta)
+    sin_theta = math.sin(theta)
+
+    Rz = torch.tensor([
+        [cos_theta, -sin_theta, 0],
+        [sin_theta,  cos_theta, 0],
+        [0,          0,         1]
+    ], dtype=torch.float32)
+    
+    return Rz
+
+def apply_rotation_matrix_pose(pose, matrix):
+    R = pose[:3, :3]
+    t = pose[:3, 3]
+
+    R_new = R @ matrix  # Rotate camera
+    pose_new = torch.eye(4)
+    pose_new[:3, :3] = R_new
+    pose_new[:3, 3] = t
+    return pose_new
+
+def rotate_pose(pose, angle_deg):
+    Rz = get_rotation_matrix_2d(angle_deg)
+    
+    return apply_rotation_matrix_pose(pose, Rz)
 
 
 class MegaDepthDataset(Dataset):
@@ -72,6 +105,8 @@ class MegaDepthDataset(Dataset):
         self.coarse_scale = kwargs[
             'coarse_scale']  # getattr(kwargs, 'coarse_scale', 0.125)
         self.is_walkdepth = kwargs.get('walk_depth', False)
+        self.geometric_augmentation = kwargs.get(
+            'geometric_augmentation', False)
 
         if self.is_walkdepth:
             self.root_dir = self.scene_id
@@ -119,6 +154,7 @@ class MegaDepthDataset(Dataset):
         else:
             depth0 = depth1 = torch.tensor([])
 
+
         # read intrinsics of original size
         K_0 = torch.tensor(self.scene_info['intrinsics'][idx0].copy(),
                            dtype=torch.float).reshape(3, 3)
@@ -128,6 +164,62 @@ class MegaDepthDataset(Dataset):
         # read and compute relative poses
         T0 = self.scene_info['poses'][idx0]
         T1 = self.scene_info['poses'][idx1]
+
+        if self.geometric_augmentation:
+            if random.random() < 0.3:
+                rotation = np.random.uniform(-40, 40)
+                rotate = patrial(KT.rotate, torch.tensor([rotation], device=image0.device),
+                                  center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
+                                                       dtype=torch.float32, device=image0.device))
+
+                image0 = rotate(image0)
+                image1 = rotate(image1)
+
+                depth0 = rotate(depth0)
+                depth1 = rotate(depth1)
+
+                mask0 = rotate(mask0)
+                mask1 = rotate(mask1)
+
+                T0 = rotate_pose(T0, rotation)
+                T1 = rotate_pose(T1, rotation)
+            
+            if random.random() < 0.4:
+                if random.random() < 0.8:
+                    matrix = torch.tensor([
+                        [-1,  0, 0],
+                        [ 0,  1, 0],
+                        [ 0,  0, 1]
+                    ], dtype=torch.float32, device=image0.device)
+                    
+                    K_0[0, 2] = scale_wh0[0] - 1 - K_0[0, 2]
+                    K_1[0, 2] = scale_wh0[0] - 1 - K_1[0, 2]
+
+                    flip = patrial(KT.hflip)
+                else: 
+                    matrix = torch.tensor([
+                        [1,  0, 0],
+                        [0, -1, 0],
+                        [0,  0, 1]
+                    ], dtype=torch.float32, device=image0.device)
+                    
+                    K_0[1, 2] = scale_wh0[1] - 1 - K_0[1, 2]
+                    K_1[1, 2] = scale_wh0[1] - 1 - K_1[1, 2]
+
+                    flip = patrial(KT.vflip)
+
+                T0 = apply_rotation_matrix_pose(T0, matrix)
+                T1 = apply_rotation_matrix_pose(T1, matrix)
+
+                image0 = flip(image0)
+                image1 = flip(image1)
+
+                mask0 = flip(mask0)
+                mask1 = flip(mask1)
+
+                depth0 = flip(depth0)
+                depth1 = flip(depth1)
+
         T_0to1 = torch.tensor(np.matmul(T1, np.linalg.inv(T0)),
                               dtype=torch.float)[:4, :4]  # (4, 4)
         T_1to0 = T_0to1.inverse()
