@@ -180,8 +180,8 @@ class MegaDepthDataset(Dataset):
                 depth0 = rotate(depth0.unsqueeze(0)).squeeze(0)
                 depth1 = rotate(depth1.unsqueeze(0)).squeeze(0)
 
-                mask0 = rotate(mask0.unsqueeze(0)).squeeze(0)
-                mask1 = rotate(mask1.unsqueeze(0)).squeeze(0)
+                mask0 = rotate(mask0.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+                mask1 = rotate(mask1.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
 
                 T0 = rotate_pose(T0, rotation)
                 T1 = rotate_pose(T1, rotation)
