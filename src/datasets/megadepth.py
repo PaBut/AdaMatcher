@@ -33,9 +33,9 @@ def apply_rotation_matrix_pose(pose, matrix):
     t = pose[:3, 3]
 
     R_new = R @ matrix # Rotate camera
-    pose_new = torch.eye(4, device=pose.device, dtype=matrix.dtype)
+    pose_new = np.eye(4)
     pose_new[:3, :3] = R_new
-    pose_new[:3, 3] = torch.from_numpy(t)
+    pose_new[:3, 3] = t
     return pose_new
 
 def rotate_pose(pose, angle_deg):
@@ -188,22 +188,22 @@ class MegaDepthDataset(Dataset):
             
             if random.random() < 0.3:
                 if random.random() < 0.85:
-                    matrix = torch.tensor([
+                    matrix = np.array([
                         [-1,  0, 0],
                         [ 0,  1, 0],
                         [ 0,  0, 1]
-                    ], dtype=torch.float32, device=image0.device)
+                    ], dtype=np.float32)
                     
                     K_0[0, 2] = scale_wh0[0] - 1 - K_0[0, 2]
                     K_1[0, 2] = scale_wh0[0] - 1 - K_1[0, 2]
 
                     flip = patrial(KT.hflip)
                 else: 
-                    matrix = torch.tensor([
+                    matrix = np.array([
                         [1,  0, 0],
                         [0, -1, 0],
                         [0,  0, 1]
-                    ], dtype=torch.float32, device=image0.device)
+                    ], dtype=np.float32)
                     
                     K_0[1, 2] = scale_wh0[1] - 1 - K_0[1, 2]
                     K_1[1, 2] = scale_wh0[1] - 1 - K_1[1, 2]
