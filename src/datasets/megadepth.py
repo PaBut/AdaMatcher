@@ -64,7 +64,7 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         K[0, 2] = scale_wh[0] * scale[0] - K[0, 2]
         K[0, 0] *= -1
 
-        T = apply_rotation_matrix_pose(T, matrix)
+        # T = apply_rotation_matrix_pose(T, matrix)
 
         image = KT.hflip(image.unsqueeze(0)).squeeze(0)
         mask = KT.hflip(mask.unsqueeze(0)).squeeze(0)
@@ -80,7 +80,7 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         K[1, 2] = scale_wh[1] * scale[1] - K[1, 2]
         K[1, 1] *= -1
 
-        T = apply_rotation_matrix_pose(T, matrix)
+        # T = apply_rotation_matrix_pose(T, matrix)
 
         image = KT.vflip(image.unsqueeze(0)).squeeze(0)
         mask = KT.vflip(mask.unsqueeze(0)).squeeze(0)
