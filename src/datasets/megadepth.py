@@ -32,10 +32,10 @@ def apply_rotation_matrix_pose(pose, matrix):
     R = pose[:3, :3]
     t = pose[:3, 3]
 
-    R_new = R @ matrix # Rotate camera
+    R_new = matrix @ R # Rotate camera
     pose_new = np.eye(4)
     pose_new[:3, :3] = R_new
-    pose_new[:3, 3] = matrix[:3,:3] @ t
+    pose_new[:3, 3] = t
     return pose_new
 
 def rotate_pose(pose, angle_deg):
