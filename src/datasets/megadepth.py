@@ -67,7 +67,7 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         # T = apply_rotation_matrix_pose(T, matrix)
 
         image = KT.hflip(image.unsqueeze(0)).squeeze(0)
-        mask = KT.hflip(mask.unsqueeze(0)).squeeze(0)
+        mask = KT.hflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
         depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
 
     if vflip:
@@ -83,7 +83,7 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         # T = apply_rotation_matrix_pose(T, matrix)
 
         image = KT.vflip(image.unsqueeze(0)).squeeze(0)
-        mask = KT.vflip(mask.unsqueeze(0)).squeeze(0)
+        mask = KT.vflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
         depth = KT.vflip(depth.unsqueeze(0)).squeeze(0)
 
     return image, mask, depth, K, T
