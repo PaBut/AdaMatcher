@@ -24,7 +24,7 @@ def get_rotation_matrix_2d(angle_degrees, device):
         [cos_theta, -sin_theta, 0],
         [sin_theta,  cos_theta, 0],
         [0,          0,         1]
-    ], dtype=torch.float64, device=device)
+    ], dtype=torch.float32, device=device)
     
     return Rz
 
@@ -32,10 +32,10 @@ def apply_rotation_matrix_pose(pose, matrix):
     R = pose[:3, :3]
     t = pose[:3, 3]
 
-    R_new = torch.tensor(R, device=pose.device, dtype=torch.float64) @ matrix # Rotate camera
-    pose_new = torch.eye(4, device=pose.device, dtype=torch.float64)
+    R_new = torch.tensor(R, device=pose.device, dtype=matrix.dtype) @ matrix # Rotate camera
+    pose_new = torch.eye(4, device=pose.device, dtype=matrix.dtype)
     pose_new[:3, :3] = R_new
-    pose_new[:3, 3] = torch.tensor(t, device=pose.device, dtype=torch.float64)
+    pose_new[:3, 3] = torch.tensor(t, device=pose.device, dtype=matrix.dtype)
     return pose_new
 
 def rotate_pose(pose, angle_deg):
