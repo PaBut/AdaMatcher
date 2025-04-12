@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import kornia.geometry.transform as KT
 from loguru import logger
 from torch.utils.data import Dataset
-from functools import partial as patrial
+from functools import partial as partial
 
 from src.utils.dataset import (read_megadepth_color, read_megadepth_depth,
                                read_megadepth_gray, read_scannet_color)
@@ -170,7 +170,7 @@ class MegaDepthDataset(Dataset):
             if random.random() < 0.2:
                 logger.info(f'{image0.shape}')
                 rotation = np.random.uniform(-40, 40)
-                rotate = patrial(KT.rotate, angle=torch.tensor([rotation], device=image0.device),
+                rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image0.device),
                                   center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
                                                        dtype=torch.float32, device=image0.device))
 
@@ -186,45 +186,45 @@ class MegaDepthDataset(Dataset):
                 T0 = rotate_pose(T0, rotation)
                 T1 = rotate_pose(T1, rotation)
             
-            # if random.random() < 0.3:
-            #     if random.random() < 0.85:
-            #         # matrix = np.array([
-            #         #     [-1,  0, scale_wh0[0]],
-            #         #     [ 0,  1, 0],
-            #         #     [ 0,  0, 1]
-            #         # ], dtype=np.float32)
+            if random.random() < 0.3:
+                if random.random() < 0.85:
+                    matrix = np.array([
+                        [-1,  0, scale_wh0[0] * scale0[0]],
+                        [ 0,  1, 0],
+                        [ 0,  0, 1]
+                    ], dtype=np.float32)
                     
-            #         K_0[0, 2] = scale_wh0[0] * scale0[0] - K_0[0, 2]
-            #         K_0[0, 0] = -K_0[0, 0]
-            #         K_1[0, 2] = scale_wh0[0] * scale1[0] - K_1[0, 2]
-            #         K_1[0, 0] = -K_1[0, 0]
+                    K_0[0, 2] = scale_wh0[0] * scale0[0] - K_0[0, 2]
+                    K_0[0, 0] = -K_0[0, 0]
+                    K_1[0, 2] = scale_wh1[0] * scale1[0] - K_1[0, 2]
+                    K_1[0, 0] = -K_1[0, 0]
 
-            #         flip = patrial(KT.hflip)
-            #     else: 
-            #         # matrix = np.array([
-            #         #     [1,  0, 0],
-            #         #     [0, -1, scale_wh0[1]],
-            #         #     [0,  0, 1]
-            #         # ], dtype=np.float32)
+                    flip = partial(KT.hflip)
+                else: 
+                    matrix = np.array([
+                        [1,  0, 0],
+                        [0, -1, scale_wh0[1] * scale0[1]],
+                        [0,  0, 1]
+                    ], dtype=np.float32)
                     
-            #         K_0[1, 2] = scale_wh0[1] * scale0[1] - K_0[1, 2]
-            #         K_0[1, 1] = -K_0[1, 1]
-            #         K_1[1, 2] = scale_wh0[1] * scale1[1] - K_1[1, 2]
-            #         K_1[1, 1] = -K_1[1, 1]
+                    K_0[1, 2] = scale_wh0[1] * scale0[1] - K_0[1, 2]
+                    K_0[1, 1] = -K_0[1, 1]
+                    K_1[1, 2] = scale_wh1[1] * scale1[1] - K_1[1, 2]
+                    K_1[1, 1] = -K_1[1, 1]
 
-            #         flip = patrial(KT.vflip)
+                    flip = partial(KT.vflip)
 
-            #     # T0 = apply_rotation_matrix_pose(T0, matrix)
-            #     # T1 = apply_rotation_matrix_pose(T1, matrix)
+                T0 = apply_rotation_matrix_pose(T0, matrix)
+                T1 = apply_rotation_matrix_pose(T1, matrix)
 
-            #     image0 = flip(image0.unsqueeze(0)).squeeze(0)
-            #     image1 = flip(image1.unsqueeze(0)).squeeze(0)
+                image0 = flip(image0.unsqueeze(0)).squeeze(0)
+                image1 = flip(image1.unsqueeze(0)).squeeze(0)
 
-            #     mask0 = flip(mask0.unsqueeze(0)).squeeze(0)
-            #     mask1 = flip(mask1.unsqueeze(0)).squeeze(0)
+                mask0 = flip(mask0.unsqueeze(0)).squeeze(0)
+                mask1 = flip(mask1.unsqueeze(0)).squeeze(0)
 
-            #     depth0 = flip(depth0.unsqueeze(0)).squeeze(0)
-            #     depth1 = flip(depth1.unsqueeze(0)).squeeze(0)
+                depth0 = flip(depth0.unsqueeze(0)).squeeze(0)
+                depth1 = flip(depth1.unsqueeze(0)).squeeze(0)
 
         T_0to1 = torch.tensor(np.matmul(T1, np.linalg.inv(T0)),
                               dtype=torch.float)[:4, :4]  # (4, 4)
