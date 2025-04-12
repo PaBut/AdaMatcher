@@ -177,11 +177,11 @@ class MegaDepthDataset(Dataset):
                 image0 = rotate(image0.unsqueeze(0)).squeeze(0)
                 image1 = rotate(image1.unsqueeze(0)).squeeze(0)
 
-                depth0 = rotate(depth0)
-                depth1 = rotate(depth1)
+                depth0 = rotate(depth0.unsqueeze(0)).squeeze(0)
+                depth1 = rotate(depth1.unsqueeze(0)).squeeze(0)
 
-                mask0 = rotate(mask0)
-                mask1 = rotate(mask1)
+                mask0 = rotate(mask0.unsqueeze(0)).squeeze(0)
+                mask1 = rotate(mask1.unsqueeze(0)).squeeze(0)
 
                 T0 = rotate_pose(T0, rotation)
                 T1 = rotate_pose(T1, rotation)
@@ -213,14 +213,14 @@ class MegaDepthDataset(Dataset):
                 T0 = apply_rotation_matrix_pose(T0, matrix)
                 T1 = apply_rotation_matrix_pose(T1, matrix)
 
-                image0 = flip(image0)
-                image1 = flip(image1)
+                image0 = flip(image0.unsqueeze(0)).squeeze(0)
+                image1 = flip(image1.unsqueeze(0)).squeeze(0)
 
-                mask0 = flip(mask0)
-                mask1 = flip(mask1)
+                mask0 = flip(mask0.unsqueeze(0)).squeeze(0)
+                mask1 = flip(mask1.unsqueeze(0)).squeeze(0)
 
-                depth0 = flip(depth0)
-                depth1 = flip(depth1)
+                depth0 = flip(depth0.unsqueeze(0)).squeeze(0)
+                depth1 = flip(depth1.unsqueeze(0)).squeeze(0)
 
         T_0to1 = torch.tensor(np.matmul(T1, np.linalg.inv(T0)),
                               dtype=torch.float)[:4, :4]  # (4, 4)
