@@ -35,7 +35,7 @@ def apply_rotation_matrix_pose(pose, matrix):
     R_new = R @ matrix # Rotate camera
     pose_new = torch.eye(4, device=pose.device, dtype=matrix.dtype)
     pose_new[:3, :3] = R_new
-    pose_new[:3, 3] = torch.tensor(t, device=pose.device, dtype=matrix.dtype)
+    pose_new[:3, 3] = torch.from_numpy(t)
     return pose_new
 
 def rotate_pose(pose, angle_deg):
