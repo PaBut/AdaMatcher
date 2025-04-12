@@ -186,45 +186,45 @@ class MegaDepthDataset(Dataset):
                 T0 = rotate_pose(T0, rotation)
                 T1 = rotate_pose(T1, rotation)
             
-            if random.random() < 0.3:
-                if random.random() < 0.85:
-                    # matrix = np.array([
-                    #     [-1,  0, scale_wh0[0]],
-                    #     [ 0,  1, 0],
-                    #     [ 0,  0, 1]
-                    # ], dtype=np.float32)
+            # if random.random() < 0.3:
+            #     if random.random() < 0.85:
+            #         # matrix = np.array([
+            #         #     [-1,  0, scale_wh0[0]],
+            #         #     [ 0,  1, 0],
+            #         #     [ 0,  0, 1]
+            #         # ], dtype=np.float32)
                     
-                    K_0[0, 2] = scale_wh0[0] * scale0[0] - K_0[0, 2]
-                    K_0[0, 0] = -K_0[0, 0]
-                    K_1[0, 2] = scale_wh0[0] * scale1[0] - K_1[0, 2]
-                    K_1[0, 0] = -K_1[0, 0]
+            #         K_0[0, 2] = scale_wh0[0] * scale0[0] - K_0[0, 2]
+            #         K_0[0, 0] = -K_0[0, 0]
+            #         K_1[0, 2] = scale_wh0[0] * scale1[0] - K_1[0, 2]
+            #         K_1[0, 0] = -K_1[0, 0]
 
-                    flip = patrial(KT.hflip)
-                else: 
-                    # matrix = np.array([
-                    #     [1,  0, 0],
-                    #     [0, -1, scale_wh0[1]],
-                    #     [0,  0, 1]
-                    # ], dtype=np.float32)
+            #         flip = patrial(KT.hflip)
+            #     else: 
+            #         # matrix = np.array([
+            #         #     [1,  0, 0],
+            #         #     [0, -1, scale_wh0[1]],
+            #         #     [0,  0, 1]
+            #         # ], dtype=np.float32)
                     
-                    K_0[1, 2] = scale_wh0[1] * scale0[1] - K_0[1, 2]
-                    K_0[1, 1] = -K_0[1, 1]
-                    K_1[1, 2] = scale_wh0[1] * scale1[1] - K_1[1, 2]
-                    K_1[1, 1] = -K_1[1, 1]
+            #         K_0[1, 2] = scale_wh0[1] * scale0[1] - K_0[1, 2]
+            #         K_0[1, 1] = -K_0[1, 1]
+            #         K_1[1, 2] = scale_wh0[1] * scale1[1] - K_1[1, 2]
+            #         K_1[1, 1] = -K_1[1, 1]
 
-                    flip = patrial(KT.vflip)
+            #         flip = patrial(KT.vflip)
 
-                # T0 = apply_rotation_matrix_pose(T0, matrix)
-                # T1 = apply_rotation_matrix_pose(T1, matrix)
+            #     # T0 = apply_rotation_matrix_pose(T0, matrix)
+            #     # T1 = apply_rotation_matrix_pose(T1, matrix)
 
-                image0 = flip(image0.unsqueeze(0)).squeeze(0)
-                image1 = flip(image1.unsqueeze(0)).squeeze(0)
+            #     image0 = flip(image0.unsqueeze(0)).squeeze(0)
+            #     image1 = flip(image1.unsqueeze(0)).squeeze(0)
 
-                mask0 = flip(mask0.unsqueeze(0)).squeeze(0)
-                mask1 = flip(mask1.unsqueeze(0)).squeeze(0)
+            #     mask0 = flip(mask0.unsqueeze(0)).squeeze(0)
+            #     mask1 = flip(mask1.unsqueeze(0)).squeeze(0)
 
-                depth0 = flip(depth0.unsqueeze(0)).squeeze(0)
-                depth1 = flip(depth1.unsqueeze(0)).squeeze(0)
+            #     depth0 = flip(depth0.unsqueeze(0)).squeeze(0)
+            #     depth1 = flip(depth1.unsqueeze(0)).squeeze(0)
 
         T_0to1 = torch.tensor(np.matmul(T1, np.linalg.inv(T0)),
                               dtype=torch.float)[:4, :4]  # (4, 4)
