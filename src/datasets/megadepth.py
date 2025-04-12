@@ -167,24 +167,24 @@ class MegaDepthDataset(Dataset):
 
         if self.geometric_augmentation:
                 
-            if random.random() < 0.2:
-                logger.info(f'{image0.shape}')
-                rotation = np.random.uniform(-40, 40)
-                rotate = patrial(KT.rotate, angle=torch.tensor([rotation], device=image0.device),
-                                  center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
-                                                       dtype=torch.float32, device=image0.device))
+            # if random.random() < 0.2:
+            #     logger.info(f'{image0.shape}')
+            #     rotation = np.random.uniform(-40, 40)
+            #     rotate = patrial(KT.rotate, angle=torch.tensor([rotation], device=image0.device),
+            #                       center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
+            #                                            dtype=torch.float32, device=image0.device))
 
-                image0 = rotate(image0.unsqueeze(0)).squeeze(0)
-                image1 = rotate(image1.unsqueeze(0)).squeeze(0)
+            #     image0 = rotate(image0.unsqueeze(0)).squeeze(0)
+            #     image1 = rotate(image1.unsqueeze(0)).squeeze(0)
 
-                depth0 = rotate(depth0.unsqueeze(0)).squeeze(0)
-                depth1 = rotate(depth1.unsqueeze(0)).squeeze(0)
+            #     depth0 = rotate(depth0.unsqueeze(0)).squeeze(0)
+            #     depth1 = rotate(depth1.unsqueeze(0)).squeeze(0)
 
-                mask0 = rotate(mask0.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-                mask1 = rotate(mask1.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+            #     mask0 = rotate(mask0.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+            #     mask1 = rotate(mask1.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
 
-                T0 = rotate_pose(T0, rotation)
-                T1 = rotate_pose(T1, rotation)
+            #     T0 = rotate_pose(T0, rotation)
+            #     T1 = rotate_pose(T1, rotation)
             
             if random.random() < 0.3:
                 if random.random() < 0.85:
