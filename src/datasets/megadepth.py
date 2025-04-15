@@ -50,7 +50,7 @@ def kornia_flip_around_point(image_tensor, point, flip_dim):
     cx, cy = point
 
     # Translate to origin
-    trans1 = KT.get_translation_matrix2d(torch.tensor([[cx, cy]], dtype=torch.float32), invert=True)
+    trans1 = KT.get_translation_matrix2d(torch.tensor([[-cx, -cy]], dtype=torch.float32))
 
     # Flip matrix
     scale_x = -1 if flip_dim == 2 else 1
