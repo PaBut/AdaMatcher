@@ -62,7 +62,7 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
             [ 0,  0, 1]
         ], dtype=np.float32)
         
-        K[0, 2] = scale_wh[0] * scale[0] - K[0, 2]
+        # K[0, 2] = scale_wh[0] * scale[0] - K[0, 2]
         # K[0, 2] = -K[0, 2]
         # K[0, 0] *= -1
 
