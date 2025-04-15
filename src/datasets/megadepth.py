@@ -179,11 +179,19 @@ class MegaDepthDataset(Dataset):
         img_name1 = osp.join(self.root_dir,
                              self.scene_info['image_paths'][idx1])
         
-        hflip0=np.random.choice([True, False], p=[1., 0.])
-        hflip1=np.random.choice([True, False], p=[1., 0.])
+        if self.geometric_augmentation:
+            hflip0=np.random.choice([True, False], p=[1., 0.])
+            hflip1=np.random.choice([True, False], p=[1., 1.])
 
-        vflip0=np.random.choice([True, False], p=[0.02, 0.98])
-        vflip1=np.random.choice([True, False], p=[0.02, 0.98])
+            vflip0=np.random.choice([True, False], p=[0.02, 0.98])
+            vflip1=np.random.choice([True, False], p=[0.02, 0.98])
+
+        else:
+            hflip0=False
+            hflip1=False
+
+            vflip0=False
+            vflip1=False
 
         # TODO: Support augmentation & handle seeds for each worker correctly.
         # if 'rots' in self.scene_info and 0:
@@ -289,7 +297,8 @@ class MegaDepthDataset(Dataset):
         #         depth0 = flip(depth0.unsqueeze(0)).squeeze(0)
         #         depth1 = flip(depth1.unsqueeze(0)).squeeze(0)
 
-        if self.geometric_augmentation and random.random() < 0.5:
+        # if self.geometric_augmentation and random.random() < 0.5:
+        if self.geometric_augmentation:
             image0, mask0, depth0, K_0, T0 = apply_geometric_augmentation(
                 image0, mask0, depth0, K_0, T0, scale_wh0, scale0,
                 rotation=np.random.choice([True, False], p=[1., 0.]), 
@@ -298,7 +307,8 @@ class MegaDepthDataset(Dataset):
                 # hflip=np.random.choice([True, False], p=[0.3, 0.7]),
                 vflip=vflip0)
             
-        if self.geometric_augmentation and random.random() < 0.5:
+        # if self.geometric_augmentation and random.random() < 0.5:
+        if self.geometric_augmentation:
             image1, mask1, depth1, K_1, T1 = apply_geometric_augmentation(
                 image1, mask1, depth1, K_1, T1, scale_wh1, scale1,
                 rotation=np.random.choice([True, False], p=[1., 0.]), 
