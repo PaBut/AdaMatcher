@@ -114,7 +114,7 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         # depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
 
         image = kornia_flip_around_point(image.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
-        mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0).squeeze(0)
         depth = kornia_flip_around_point(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
 
     # if vflip:
