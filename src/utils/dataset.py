@@ -177,7 +177,7 @@ def read_megadepth_color(path,
         image = np.rot90(image, k=rotation).copy()
 
     if hflip:
-        image = KT.hflip(torch.from_numpy(image).unsqueeze(0)).squeeze(0)
+        image = KT.hflip(torch.from_numpy(image).unsqueeze(0)).squeeze(0).numpy()
 
     # resize image
     w, h = image.shape[1], image.shape[0]
@@ -194,7 +194,7 @@ def read_megadepth_color(path,
     else:
         mask = None
 
-    image = (image.float() / 255
+    image = (torch.from_numpy(image.float()) / 255
              )  # (3, h, w) -> (3, h, w) and normalized
     mask = torch.from_numpy(mask)
 
