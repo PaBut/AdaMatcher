@@ -194,7 +194,7 @@ def read_megadepth_color(path,
     else:
         mask = None
 
-    image = (torch.from_numpy(image.float()) / 255
+    image = (torch.from_numpy(image).float() / 255
              )  # (3, h, w) -> (3, h, w) and normalized
     mask = torch.from_numpy(mask)
 
@@ -229,11 +229,11 @@ def read_megadepth_depth(path, pad_to=None, hflip=False):
         depth = np.array(h5py.File(path, 'r')['depth'])
 
     if hflip:
-        depth = KT.hflip(torch.from_numpy(depth).unsqueeze(0)).squeeze(0)
+        depth = KT.hflip(torch.from_numpy(depth).unsqueeze(0)).squeeze(0).numpy()
 
     if pad_to is not None:
         depth, _ = pad_bottom_right(depth, pad_to, ret_mask=False)
-    depth = depth.float()  # (h, w)
+    depth = torch.from_numpy(depth).float()  # (h, w)
     return depth
 
 
