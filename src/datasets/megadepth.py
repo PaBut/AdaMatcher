@@ -181,7 +181,7 @@ class MegaDepthDataset(Dataset):
         
         if self.geometric_augmentation:
             hflip0=np.random.choice([True, False], p=[1., 0.])
-            hflip1=np.random.choice([True, False], p=[1., 1.])
+            hflip1=np.random.choice([True, False], p=[1., 0.])
 
             vflip0=np.random.choice([True, False], p=[0.02, 0.98])
             vflip1=np.random.choice([True, False], p=[0.02, 0.98])
