@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from loguru import logger
 from numpy.linalg import inv
+import kornia.geometry.transform as KT
 
 try:
     # for internal use only
@@ -158,7 +159,8 @@ def read_megadepth_color(path,
                          df=None,
                          padding=False,
                          augment_fn=None,
-                         rotation=0):
+                         rotation=0,
+                         hflip=False):
     """
     Args:
         resize (int, optional): the longer edge of resized images. None for no resize.
@@ -173,6 +175,9 @@ def read_megadepth_color(path,
     image = imread_color(path, augment_fn, client=MEGADEPTH_CLIENT)
     if rotation != 0:
         image = np.rot90(image, k=rotation).copy()
+
+    if hflip:
+        image = KT.hflip(torch.from_numpy(image).unsqueeze(0)).squeeze(0)
 
     # resize image
     w, h = image.shape[1], image.shape[0]
@@ -189,7 +194,7 @@ def read_megadepth_color(path,
     else:
         mask = None
 
-    image = (torch.from_numpy(image).float() / 255
+    image = (image.float() / 255
              )  # (3, h, w) -> (3, h, w) and normalized
     mask = torch.from_numpy(mask)
 
@@ -213,7 +218,7 @@ def read_bin(path):
     array = array.reshape((width, height, channels), order="F")
     return np.transpose(array, (1, 0, 2)).squeeze()
 
-def read_megadepth_depth(path, pad_to=None):
+def read_megadepth_depth(path, pad_to=None, hflip=False):
     if str(path).endswith('.jpg'):
         depth = cv2.imread(path, 0)
     elif str(path).endswith('.bin'):
@@ -222,9 +227,13 @@ def read_megadepth_depth(path, pad_to=None):
         depth = load_array_from_s3(path, MEGADEPTH_CLIENT, None, use_h5py=True)
     else:
         depth = np.array(h5py.File(path, 'r')['depth'])
+
+    if hflip:
+        depth = KT.hflip(torch.from_numpy(depth).unsqueeze(0)).squeeze(0)
+
     if pad_to is not None:
         depth, _ = pad_bottom_right(depth, pad_to, ret_mask=False)
-    depth = torch.from_numpy(depth).float()  # (h, w)
+    depth = depth.float()  # (h, w)
     return depth
 
 

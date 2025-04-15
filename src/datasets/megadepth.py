@@ -113,9 +113,9 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         # mask = KT.hflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
         # depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
 
-        image = kornia_flip_around_point(image.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
-        mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0).squeeze(0)
-        depth = kornia_flip_around_point(depth.unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).unsqueeze(0).unsqueeze(0)
+        # image = kornia_flip_around_point(image.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        # mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        # depth = kornia_flip_around_point(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
 
     # if vflip:
     #     matrix = np.array([
@@ -217,6 +217,9 @@ class MegaDepthDataset(Dataset):
                              self.scene_info['image_paths'][idx0])
         img_name1 = osp.join(self.root_dir,
                              self.scene_info['image_paths'][idx1])
+        
+        hflip0=np.random.choice([True, False], p=[1., 0.])
+        hflip1=np.random.choice([True, False], p=[1., 0.])
 
         # TODO: Support augmentation & handle seeds for each worker correctly.
         # if 'rots' in self.scene_info and 0:
@@ -231,10 +234,10 @@ class MegaDepthDataset(Dataset):
         else:
             image0, mask0, scale0, scale_wh0 = read_megadepth_color(
                 img_name0, self.img_resize, self.df, self.img_padding,
-            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]))
+            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]), hflip=hflip0)
             image1, mask1, scale1, scale_wh1 = read_megadepth_color(
                 img_name1, self.img_resize, self.df, self.img_padding, 
-            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]))
+            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]), hflip=hflip1)
         # read depth. shape: (h, w)
         if self.mode in ['train', 'val']:
             depth0 = read_megadepth_depth(
