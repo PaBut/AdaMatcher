@@ -70,7 +70,7 @@ def kornia_flip_around_point(image_tensor, point, flip_dim):
     point: (cx, cy)
     flip_dim: 1 (vertical), 2 (horizontal), -1 (both)
     """
-    B, C, H, W = image_tensor.shape
+    B = image_tensor.shape[0]
     cx, cy = point
 
     # Build affine matrix: M = T_back * Flip * T_to_origin
