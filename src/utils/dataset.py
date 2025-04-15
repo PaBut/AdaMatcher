@@ -160,7 +160,8 @@ def read_megadepth_color(path,
                          padding=False,
                          augment_fn=None,
                          rotation=0,
-                         hflip=False):
+                         hflip=False,
+                         vflip=False):
     """
     Args:
         resize (int, optional): the longer edge of resized images. None for no resize.
@@ -178,6 +179,9 @@ def read_megadepth_color(path,
 
     if hflip:
         image = KT.hflip(torch.from_numpy(image).unsqueeze(0)).squeeze(0).numpy()
+
+    if vflip:
+        image = KT.vflip(torch.from_numpy(image).unsqueeze(0)).squeeze(0).numpy()
 
     # resize image
     w, h = image.shape[1], image.shape[0]
@@ -218,7 +222,7 @@ def read_bin(path):
     array = array.reshape((width, height, channels), order="F")
     return np.transpose(array, (1, 0, 2)).squeeze()
 
-def read_megadepth_depth(path, pad_to=None, hflip=False):
+def read_megadepth_depth(path, pad_to=None, hflip=False, vflip=False):
     if str(path).endswith('.jpg'):
         depth = cv2.imread(path, 0)
     elif str(path).endswith('.bin'):
@@ -230,6 +234,9 @@ def read_megadepth_depth(path, pad_to=None, hflip=False):
 
     if hflip:
         depth = KT.hflip(torch.from_numpy(depth).unsqueeze(0)).squeeze(0).numpy()
+
+    if vflip:
+        depth = KT.vflip(torch.from_numpy(depth).unsqueeze(0)).squeeze(0).numpy()
 
     if pad_to is not None:
         depth, _ = pad_bottom_right(depth, pad_to, ret_mask=False)

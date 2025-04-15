@@ -45,45 +45,6 @@ def rotate_pose(pose, angle_deg):
     
     return apply_rotation_matrix_pose(pose, Rz)
 
-def get_translation_matrix(tx, ty):
-    """Create a 2D translation matrix."""
-    return torch.tensor([
-        [1, 0, tx],
-        [0, 1, ty],
-        [0, 0, 1]
-    ], dtype=torch.float32)
-
-def get_flip_matrix(flip_dim):
-    """Create a flip matrix in 2D space."""
-    scale_x = -1 if flip_dim == 2 else 1  # flip_dim: 2 = horizontal, 1 = vertical
-    scale_y = -1 if flip_dim == 1 else 1
-    return torch.tensor([
-        [scale_x, 0, 0],
-        [0, scale_y, 0],
-        [0, 0, 1]
-    ], dtype=torch.float32)
-
-def kornia_flip_around_point(image_tensor, point, flip_dim):
-    """Flip image_tensor around a specific point using Kornia.
-    
-    image_tensor: [B, C, H, W]
-    point: (cx, cy)
-    flip_dim: 1 (vertical), 2 (horizontal), -1 (both)
-    """
-    B = image_tensor.shape[0]
-    cx, cy = point
-
-    # Build affine matrix: M = T_back * Flip * T_to_origin
-    trans_to_origin = get_translation_matrix(-cx, -cy)
-    flip = get_flip_matrix(flip_dim)
-    trans_back = get_translation_matrix(cx, cy)
-
-    # Combined transform: M = T_back * Flip * T_to_origin
-    M = trans_back @ flip @ trans_to_origin
-    M = M.unsqueeze(0).repeat(B, 1, 1)  # [B, 2, 3]
-    grid = torch.nn.functional.affine_grid(M[:, :2], image_tensor.size(), align_corners=False)
-    return torch.nn.functional.grid_sample(image_tensor, grid, align_corners=False)
-
 def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rotation: bool, hflip: bool, vflip: bool):
     # if rotation:
     #     rotation = np.random.uniform(-40, 40)
@@ -117,23 +78,23 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         # mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
         # depth = kornia_flip_around_point(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
 
-    # if vflip:
-    #     matrix = np.array([
-    #         [1,  0, 0],
-    #         # [0, -1, scale_wh[1] * scale[1]],
-    #         [0, -1, 0],
-    #         [0,  0, 1]
-    #     ], dtype=np.float32)
+    if vflip:
+        matrix = np.array([
+            [1,  0, 0],
+            # [0, -1, scale_wh[1] * scale[1]],
+            [0, -1, 0],
+            [0,  0, 1]
+        ], dtype=np.float32)
         
-    #     K[1, 2] = scale_wh[1] * scale[1] - K[1, 2]
-    #     # K[1, 2] = -K[1, 2]
-    #     # K[1, 1] *= -1
+        # K[1, 2] = scale_wh[1] * scale[1] - K[1, 2]
+        # K[1, 2] = -K[1, 2]
+        # K[1, 1] *= -1
 
-    #     T = apply_rotation_matrix_pose(T, matrix)
+        T = apply_rotation_matrix_pose(T, matrix)
 
-    #     image = KT.vflip(image.unsqueeze(0)).squeeze(0)
-    #     mask = KT.vflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-    #     depth = KT.vflip(depth.unsqueeze(0)).squeeze(0)
+        # image = KT.vflip(image.unsqueeze(0)).squeeze(0)
+        # mask = KT.vflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+        # depth = KT.vflip(depth.unsqueeze(0)).squeeze(0)
 
     return image, mask, depth, K, T
 
@@ -218,8 +179,11 @@ class MegaDepthDataset(Dataset):
         img_name1 = osp.join(self.root_dir,
                              self.scene_info['image_paths'][idx1])
         
-        hflip0=np.random.choice([True, False], p=[1., 0.])
-        hflip1=np.random.choice([True, False], p=[1., 0.])
+        hflip0=np.random.choice([True, False], p=[0.3, 0.7])
+        hflip1=np.random.choice([True, False], p=[0.3, 0.7])
+
+        vflip0=np.random.choice([True, False], p=[0.02, 0.98])
+        vflip1=np.random.choice([True, False], p=[0.02, 0.98])
 
         # TODO: Support augmentation & handle seeds for each worker correctly.
         # if 'rots' in self.scene_info and 0:
@@ -234,19 +198,21 @@ class MegaDepthDataset(Dataset):
         else:
             image0, mask0, scale0, scale_wh0 = read_megadepth_color(
                 img_name0, self.img_resize, self.df, self.img_padding,
-            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]), hflip=hflip0)
+            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]), hflip=hflip0, vflip=vflip0)
             image1, mask1, scale1, scale_wh1 = read_megadepth_color(
                 img_name1, self.img_resize, self.df, self.img_padding, 
-            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]), hflip=hflip1)
+            np.random.choice([self.augment_fn, None], p=[0.6, 0.4]), hflip=hflip1, vflip=vflip1)
         # read depth. shape: (h, w)
         if self.mode in ['train', 'val']:
             depth0 = read_megadepth_depth(
                 osp.join(self.root_dir, self.scene_info['depth_paths'][idx0]),
                 pad_to=self.depth_max_size,
+                hflip=hflip0, vflip = vflip0
             )
             depth1 = read_megadepth_depth(
                 osp.join(self.root_dir, self.scene_info['depth_paths'][idx1]),
                 pad_to=self.depth_max_size,
+                hflip=hflip1, vflip = vflip1
             )
         else:
             depth0 = depth1 = torch.tensor([])
@@ -327,17 +293,17 @@ class MegaDepthDataset(Dataset):
             image0, mask0, depth0, K_0, T0 = apply_geometric_augmentation(
                 image0, mask0, depth0, K_0, T0, scale_wh0, scale0,
                 rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
-                hflip=np.random.choice([True, False], p=[1., 0.]),
+                hflip=hflip0,
                 # hflip=np.random.choice([True, False], p=[0.3, 0.7]),
-                vflip=np.random.choice([True, False], p=[0.05, 0.95]))
+                vflip=vflip0)
             
         if self.geometric_augmentation and random.random() < 0.5:
             image1, mask1, depth1, K_1, T1 = apply_geometric_augmentation(
                 image1, mask1, depth1, K_1, T1, scale_wh1, scale1,
                 rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
-                hflip=np.random.choice([True, False], p=[1., 0.]),
+                hflip=hflip1,
                 # hflip=np.random.choice([True, False], p=[0.3, 0.7]),
-                vflip=np.random.choice([True, False], p=[0.05, 0.95]))
+                vflip=vflip1)
 
         T_0to1 = torch.tensor(np.matmul(T1, np.linalg.inv(T0)),
                               dtype=torch.float)[:4, :4]  # (4, 4)
