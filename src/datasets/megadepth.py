@@ -46,15 +46,15 @@ def rotate_pose(pose, angle_deg):
     return apply_rotation_matrix_pose(pose, Rz)
 
 def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rotation: bool, hflip: bool, vflip: bool):
-    if rotation:
-        rotation = np.random.uniform(-30, 30)
-        rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
-                          center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
-                                               dtype=torch.float32, device=image.device))
-        image = rotate(image.unsqueeze(0)).squeeze(0)
-        depth = rotate(depth.unsqueeze(0)).squeeze(0)
-        mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-        T = rotate_pose(T, rotation)
+    # if rotation:
+    #     rotation = np.random.uniform(-30, 30)
+    #     rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
+    #                       center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
+    #                                            dtype=torch.float32, device=image.device))
+    #     image = rotate(image.unsqueeze(0)).squeeze(0)
+    #     depth = rotate(depth.unsqueeze(0)).squeeze(0)
+    #     mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+    #     T = rotate_pose(T, rotation)
 
     if hflip:
         matrix = np.array([
@@ -78,23 +78,23 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
         # mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
         # depth = kornia_flip_around_point(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
 
-    # if vflip:
-    #     matrix = np.array([
-    #         [1,  0, 0],
-    #         # [0, -1, scale_wh[1] * scale[1]],
-    #         [0, -1, 0],
-    #         [0,  0, 1]
-    #     ], dtype=np.float32)
+    if vflip:
+        matrix = np.array([
+            [1,  0, 0],
+            # [0, -1, scale_wh[1] * scale[1]],
+            [0, -1, 0],
+            [0,  0, 1]
+        ], dtype=np.float32)
         
-    #     # K[1, 2] = scale_wh[1] * scale[1] - K[1, 2]
-    #     # K[1, 2] = -K[1, 2]
-    #     # K[1, 1] *= -1
+        # K[1, 2] = scale_wh[1] * scale[1] - K[1, 2]
+        # K[1, 2] = -K[1, 2]
+        # K[1, 1] *= -1
 
-    #     T = apply_rotation_matrix_pose(T, matrix)
+        T = apply_rotation_matrix_pose(T, matrix)
 
-    #     # image = KT.vflip(image.unsqueeze(0)).squeeze(0)
-    #     # mask = KT.vflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-    #     # depth = KT.vflip(depth.unsqueeze(0)).squeeze(0)
+        # image = KT.vflip(image.unsqueeze(0)).squeeze(0)
+        # mask = KT.vflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+        # depth = KT.vflip(depth.unsqueeze(0)).squeeze(0)
 
     return image, mask, depth, K, T
 
@@ -180,13 +180,13 @@ class MegaDepthDataset(Dataset):
                              self.scene_info['image_paths'][idx1])
         
         if self.geometric_augmentation:
-        #     hflip0=np.random.choice([True, False], p=[0.25, 0.75])
-        #     hflip1=np.random.choice([True, False], p=[0.25, 0.75])
+            hflip0=np.random.choice([True, False], p=[0.25, 0.75])
+            hflip1=np.random.choice([True, False], p=[0.25, 0.75])
 
-        #     vflip0=np.random.choice([True, False], p=[0.02, 0.98])
-        #     vflip1=np.random.choice([True, False], p=[0.02, 0.98])
+            vflip0=np.random.choice([True, False], p=[0.02, 0.98])
+            vflip1=np.random.choice([True, False], p=[0.02, 0.98])
 
-        # else:
+        else:
             hflip0=False
             hflip1=False
 
@@ -235,8 +235,6 @@ class MegaDepthDataset(Dataset):
         # read and compute relative poses
         T0 = self.scene_info['poses'][idx0]
         T1 = self.scene_info['poses'][idx1]
-
-        # if self.geometric_augmentation:
                 
         #     if random.random() < 0.2:
         #         logger.info(f'{image0.shape}')
