@@ -49,7 +49,8 @@ def get_translation_matrix(tx, ty):
     """Create a 2D translation matrix."""
     return torch.tensor([
         [1, 0, tx],
-        [0, 1, ty]
+        [0, 1, ty],
+        [0, 0, 1]
     ], dtype=torch.float32)
 
 def get_flip_matrix(flip_dim):
@@ -58,7 +59,8 @@ def get_flip_matrix(flip_dim):
     scale_y = -1 if flip_dim == 1 else 1
     return torch.tensor([
         [scale_x, 0, 0],
-        [0, scale_y, 0]
+        [0, scale_y, 0],
+        [0, 0, 1]
     ], dtype=torch.float32)
 
 def kornia_flip_around_point(image_tensor, point, flip_dim):
