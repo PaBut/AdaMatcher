@@ -292,7 +292,8 @@ class MegaDepthDataset(Dataset):
         if self.geometric_augmentation and random.random() < 0.5:
             image0, mask0, depth0, K_0, T0 = apply_geometric_augmentation(
                 image0, mask0, depth0, K_0, T0, scale_wh0, scale0,
-                rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
+                rotation=np.random.choice([True, False], p=[1., 0.]), 
+                # rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
                 hflip=hflip0,
                 # hflip=np.random.choice([True, False], p=[0.3, 0.7]),
                 vflip=vflip0)
@@ -300,7 +301,7 @@ class MegaDepthDataset(Dataset):
         if self.geometric_augmentation and random.random() < 0.5:
             image1, mask1, depth1, K_1, T1 = apply_geometric_augmentation(
                 image1, mask1, depth1, K_1, T1, scale_wh1, scale1,
-                rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
+                rotation=np.random.choice([True, False], p=[1., 0.]), 
                 hflip=hflip1,
                 # hflip=np.random.choice([True, False], p=[0.3, 0.7]),
                 vflip=vflip1)
