@@ -46,15 +46,15 @@ def rotate_pose(pose, angle_deg):
     return apply_rotation_matrix_pose(pose, Rz)
 
 def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rotation: bool, hflip: bool, vflip: bool):
-    # if rotation:
-    #     rotation = np.random.uniform(-30, 30)
-    #     rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
-    #                       center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
-    #                                            dtype=torch.float32, device=image.device))
-    #     image = rotate(image.unsqueeze(0)).squeeze(0)
-    #     depth = rotate(depth.unsqueeze(0)).squeeze(0)
-    #     mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-    #     T = rotate_pose(T, rotation)
+    if rotation:
+        rotation = np.random.uniform(-30, 30)
+        rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
+                          center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
+                                               dtype=torch.float32, device=image.device))
+        image = rotate(image.unsqueeze(0)).squeeze(0)
+        depth = rotate(depth.unsqueeze(0)).squeeze(0)
+        mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+        T = rotate_pose(T, rotation)
 
     if hflip:
         matrix = np.array([
@@ -180,13 +180,13 @@ class MegaDepthDataset(Dataset):
                              self.scene_info['image_paths'][idx1])
         
         if self.geometric_augmentation:
-            hflip0=np.random.choice([True, False], p=[1., 0.])
-            hflip1=np.random.choice([True, False], p=[1., 0.])
+        #     hflip0=np.random.choice([True, False], p=[0.25, 0.75])
+        #     hflip1=np.random.choice([True, False], p=[0.25, 0.75])
 
-            vflip0=np.random.choice([True, False], p=[0.02, 0.98])
-            vflip1=np.random.choice([True, False], p=[0.02, 0.98])
+        #     vflip0=np.random.choice([True, False], p=[0.02, 0.98])
+        #     vflip1=np.random.choice([True, False], p=[0.02, 0.98])
 
-        else:
+        # else:
             hflip0=False
             hflip1=False
 
