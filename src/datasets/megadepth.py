@@ -46,37 +46,37 @@ def rotate_pose(pose, angle_deg):
     return apply_rotation_matrix_pose(pose, Rz)
 
 def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rotation: bool, hflip: bool, vflip: bool):
-    if rotation:
-        rotation = np.random.uniform(-30, 30)
-        rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
-                          center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
-                                               dtype=torch.float32, device=image.device))
-        image = rotate(image.unsqueeze(0)).squeeze(0)
-        depth = rotate(depth.unsqueeze(0)).squeeze(0)
-        mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-        T = rotate_pose(T, rotation)
+    # if rotation:
+    #     rotation = np.random.uniform(-30, 30)
+    #     rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
+    #                       center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
+    #                                            dtype=torch.float32, device=image.device))
+    #     image = rotate(image.unsqueeze(0)).squeeze(0)
+    #     depth = rotate(depth.unsqueeze(0)).squeeze(0)
+    #     mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+    #     T = rotate_pose(T, rotation)
 
-    # if hflip:
-    #     matrix = np.array([
-    #         # [-1,  0, scale_wh[0] * scale[0]],
-    #         [-1,  0, 0],
-    #         [ 0,  1, 0],
-    #         [ 0,  0, 1]
-    #     ], dtype=np.float32)
+    if hflip:
+        matrix = np.array([
+            # [-1,  0, scale_wh[0] * scale[0]],
+            [-1,  0, 0],
+            [ 0,  1, 0],
+            [ 0,  0, 1]
+        ], dtype=np.float32)
         
-    #     # K[0, 2] = scale_wh[0] * scale[0] - K[0, 2]
-    #     # K[0, 2] = -K[0, 2]
-    #     # K[0, 0] *= -1
+        # K[0, 2] = scale_wh[0] * scale[0] - K[0, 2]
+        # K[0, 2] = -K[0, 2]
+        # K[0, 0] *= -1
 
-    #     T = apply_rotation_matrix_pose(T, matrix)
+        T = apply_rotation_matrix_pose(T, matrix)
 
-    #     # image = KT.hflip(image.unsqueeze(0)).squeeze(0)
-    #     # mask = KT.hflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-    #     # depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
+        # image = KT.hflip(image.unsqueeze(0)).squeeze(0)
+        # mask = KT.hflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+        # depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
 
-    #     # image = kornia_flip_around_point(image.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
-    #     # mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
-    #     # depth = kornia_flip_around_point(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        # image = kornia_flip_around_point(image.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        # mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        # depth = kornia_flip_around_point(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
 
     # if vflip:
     #     matrix = np.array([
@@ -179,8 +179,8 @@ class MegaDepthDataset(Dataset):
         img_name1 = osp.join(self.root_dir,
                              self.scene_info['image_paths'][idx1])
         
-        hflip0=np.random.choice([True, False], p=[0.3, 0.7])
-        hflip1=np.random.choice([True, False], p=[0.3, 0.7])
+        hflip0=np.random.choice([True, False], p=[1., 0.])
+        hflip1=np.random.choice([True, False], p=[1., 0.])
 
         vflip0=np.random.choice([True, False], p=[0.02, 0.98])
         vflip1=np.random.choice([True, False], p=[0.02, 0.98])
