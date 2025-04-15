@@ -2,7 +2,9 @@ import math
 import os.path as osp
 import pdb
 import random
+from typing import Sequence
 
+import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -43,6 +45,26 @@ def rotate_pose(pose, angle_deg):
     
     return apply_rotation_matrix_pose(pose, Rz)
 
+def kornia_flip_around_point(image_tensor, point, flip_dim):
+    b, c, h, w = image_tensor.shape
+    cx, cy = point
+
+    # Translate to origin
+    trans1 = KT.get_translation_matrix2d(torch.tensor([[cx, cy]], dtype=torch.float32), invert=True)
+
+    # Flip matrix
+    scale_x = -1 if flip_dim == 2 else 1
+    scale_y = -1 if flip_dim == 1 else 1
+    flip_matrix = KT.get_rotation_matrix2d(torch.tensor([[0.0, 0.0]]), angles=torch.zeros(1), scale=torch.tensor([[scale_x, scale_y]]))
+
+    # Translate back
+    trans2 = KT.get_translation_matrix2d(torch.tensor([[cx, cy]], dtype=torch.float32))
+
+    # Combine transforms
+    M = trans2 @ flip_matrix @ trans1
+    grid = torch.nn.functional.affine_grid(M[:, :2], image_tensor.size(), align_corners=False)
+    return torch.nn.functional.grid_sample(image_tensor, grid, align_corners=False)
+
 def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rotation: bool, hflip: bool, vflip: bool):
     # if rotation:
     #     rotation = np.random.uniform(-40, 40)
@@ -68,9 +90,13 @@ def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rota
 
         T = apply_rotation_matrix_pose(T, matrix)
 
-        image = KT.hflip(image.unsqueeze(0)).squeeze(0)
-        mask = KT.hflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-        depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
+        # image = KT.hflip(image.unsqueeze(0)).squeeze(0)
+        # mask = KT.hflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+        # depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
+
+        image = kornia_flip_around_point(image.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
+        depth = KT.hflip(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
 
     # if vflip:
     #     matrix = np.array([
