@@ -186,6 +186,8 @@ class PL_AdaMatcher(pl.LightningModule):
         # pdb.set_trace()
         self._trainval_inference(batch)
 
+        logger.info(f"m_bids: {batch["m_bids"].shape}, keypoints: {batch["mkpts0_f"].shape}")
+
         # logging
         if (
             self.trainer.global_rank == 0
