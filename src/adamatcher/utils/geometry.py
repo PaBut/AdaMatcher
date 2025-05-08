@@ -1,7 +1,6 @@
 import pdb
 
 import torch
-import torch.nn.functional as F
 from kornia.geometry.epipolar import essential, fundamental, numeric
 
 

@@ -1,8 +1,6 @@
 import torch
 from torch.utils.data import ConcatDataset, Sampler
 
-from loguru import logger
-
 class RandomConcatSampler(Sampler):
     """Random sampler for ConcatDataset. At each epoch, `n_samples_per_subset`
     samples will be draw from each subset in the ConcatDataset. If
