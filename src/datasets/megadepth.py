@@ -46,55 +46,33 @@ def rotate_pose(pose, angle_deg):
     return apply_rotation_matrix_pose(pose, Rz)
 
 def apply_geometric_augmentation(image, mask, depth, K, T, scale_wh, scale, rotation: bool, hflip: bool, vflip: bool):
-    # if rotation:
-    #     rotation = np.random.uniform(-30, 30)
-    #     rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
-    #                       center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
-    #                                            dtype=torch.float32, device=image.device))
-    #     image = rotate(image.unsqueeze(0)).squeeze(0)
-    #     depth = rotate(depth.unsqueeze(0)).squeeze(0)
-    #     mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-    #     T = rotate_pose(T, rotation)
+    if rotation:
+        rotation = np.random.uniform(-30, 30)
+        rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image.device),
+                          center=torch.tensor([[scale_wh[0] / 2, scale_wh[1] / 2]],
+                                               dtype=torch.float32, device=image.device))
+        image = rotate(image.unsqueeze(0)).squeeze(0)
+        depth = rotate(depth.unsqueeze(0)).squeeze(0)
+        mask = rotate(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
+        T = rotate_pose(T, rotation)
 
     if hflip:
         matrix = np.array([
-            # [-1,  0, scale_wh[0] * scale[0]],
             [-1,  0, 0],
             [ 0,  1, 0],
             [ 0,  0, 1]
         ], dtype=np.float32)
-        
-        # K[0, 2] = scale_wh[0] * scale[0] - K[0, 2]
-        # K[0, 2] = -K[0, 2]
-        # K[0, 0] *= -1
 
         T = apply_rotation_matrix_pose(T, matrix)
-
-        # image = KT.hflip(image.unsqueeze(0)).squeeze(0)
-        # mask = KT.hflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-        # depth = KT.hflip(depth.unsqueeze(0)).squeeze(0)
-
-        # image = kornia_flip_around_point(image.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
-        # mask = kornia_flip_around_point(mask.to(dtype=torch.float32).unsqueeze(0).unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
-        # depth = kornia_flip_around_point(depth.unsqueeze(0), [scale_wh[0] * scale[0] / 2, scale_wh[1] * scale[1] / 2], 2).squeeze(0)
 
     if vflip:
         matrix = np.array([
             [1,  0, 0],
-            # [0, -1, scale_wh[1] * scale[1]],
             [0, -1, 0],
             [0,  0, 1]
         ], dtype=np.float32)
-        
-        # K[1, 2] = scale_wh[1] * scale[1] - K[1, 2]
-        # K[1, 2] = -K[1, 2]
-        # K[1, 1] *= -1
 
         T = apply_rotation_matrix_pose(T, matrix)
-
-        # image = KT.vflip(image.unsqueeze(0)).squeeze(0)
-        # mask = KT.vflip(mask.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-        # depth = KT.vflip(depth.unsqueeze(0)).squeeze(0)
 
     return image, mask, depth, K, T
 
@@ -236,82 +214,18 @@ class MegaDepthDataset(Dataset):
         T0 = self.scene_info['poses'][idx0]
         T1 = self.scene_info['poses'][idx1]
                 
-        #     if random.random() < 0.2:
-        #         logger.info(f'{image0.shape}')
-        #         rotation = np.random.uniform(-40, 40)
-        #         rotate = partial(KT.rotate, angle=torch.tensor([rotation], device=image0.device),
-        #                           center=torch.tensor([[scale_wh0[0] / 2, scale_wh0[1] / 2]],
-        #                                                dtype=torch.float32, device=image0.device))
-
-        #         image0 = rotate(image0.unsqueeze(0)).squeeze(0)
-        #         image1 = rotate(image1.unsqueeze(0)).squeeze(0)
-
-        #         depth0 = rotate(depth0.unsqueeze(0)).squeeze(0)
-        #         depth1 = rotate(depth1.unsqueeze(0)).squeeze(0)
-
-        #         mask0 = rotate(mask0.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-        #         mask1 = rotate(mask1.to(dtype=torch.float32).unsqueeze(0)).squeeze(0) > 0.5
-
-        #         T0 = rotate_pose(T0, rotation)
-        #         T1 = rotate_pose(T1, rotation)
-            
-        #     if random.random() < 0.3:
-        #         if random.random() < 0.85:
-        #             matrix = np.array([
-        #                 [-1,  0, scale_wh0[0] * scale0[0]],
-        #                 [ 0,  1, 0],
-        #                 [ 0,  0, 1]
-        #             ], dtype=np.float32)
-                    
-        #             K_0[0, 2] = scale_wh0[0] * scale0[0] - K_0[0, 2]
-        #             K_0[0, 0] = -K_0[0, 0]
-        #             K_1[0, 2] = scale_wh1[0] * scale1[0] - K_1[0, 2]
-        #             K_1[0, 0] = -K_1[0, 0]
-
-        #             flip = partial(KT.hflip)
-        #         else: 
-        #             matrix = np.array([
-        #                 [1,  0, 0],
-        #                 [0, -1, scale_wh0[1] * scale0[1]],
-        #                 [0,  0, 1]
-        #             ], dtype=np.float32)
-                    
-        #             K_0[1, 2] = scale_wh0[1] * scale0[1] - K_0[1, 2]
-        #             K_0[1, 1] = -K_0[1, 1]
-        #             K_1[1, 2] = scale_wh1[1] * scale1[1] - K_1[1, 2]
-        #             K_1[1, 1] = -K_1[1, 1]
-
-        #             flip = partial(KT.vflip)
-
-        #         T0 = apply_rotation_matrix_pose(T0, matrix)
-        #         T1 = apply_rotation_matrix_pose(T1, matrix)
-
-        #         image0 = flip(image0.unsqueeze(0)).squeeze(0)
-        #         image1 = flip(image1.unsqueeze(0)).squeeze(0)
-
-        #         mask0 = flip(mask0.unsqueeze(0)).squeeze(0)
-        #         mask1 = flip(mask1.unsqueeze(0)).squeeze(0)
-
-        #         depth0 = flip(depth0.unsqueeze(0)).squeeze(0)
-        #         depth1 = flip(depth1.unsqueeze(0)).squeeze(0)
-
-        # if self.geometric_augmentation and random.random() < 0.5:
         if self.geometric_augmentation:
             image0, mask0, depth0, K_0, T0 = apply_geometric_augmentation(
                 image0, mask0, depth0, K_0, T0, scale_wh0, scale0,
-                rotation=np.random.choice([True, False], p=[1., 0.]), 
-                # rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
+                rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
                 hflip=hflip0,
-                # hflip=np.random.choice([True, False], p=[0.3, 0.7]),
                 vflip=vflip0)
             
-        # if self.geometric_augmentation and random.random() < 0.5:
         if self.geometric_augmentation:
             image1, mask1, depth1, K_1, T1 = apply_geometric_augmentation(
                 image1, mask1, depth1, K_1, T1, scale_wh1, scale1,
-                rotation=np.random.choice([True, False], p=[1., 0.]), 
+                rotation=np.random.choice([True, False], p=[0.25, 0.75]), 
                 hflip=hflip1,
-                # hflip=np.random.choice([True, False], p=[0.3, 0.7]),
                 vflip=vflip1)
 
         T_0to1 = torch.tensor(np.matmul(T1, np.linalg.inv(T0)),
