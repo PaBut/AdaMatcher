@@ -138,9 +138,8 @@ class PL_AdaMatcher(pl.LightningModule):
 
     def _trainval_inference(self, batch):
 
-        if batch["gt"].sum() > 0:
-            with self.profiler.profile("Compute coarse supervision"):
-                compute_supervision_coarse(batch, self.config)
+        with self.profiler.profile("Compute coarse supervision"):
+            compute_supervision_coarse(batch, self.config)
 
         with self.profiler.profile("AdaMatcher"):
             self.matcher(batch)

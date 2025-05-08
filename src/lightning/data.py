@@ -16,7 +16,6 @@ from tqdm import tqdm
 from src.datasets.megadepth import MegaDepthDataset
 from src.datasets.sampler import RandomConcatSampler
 from src.datasets.scannet import ScanNetDataset
-from src.datasets.walk.walk import WALKDataset
 from src.utils import comm
 from src.utils.augment import build_augmentor
 from src.utils.dataloader import get_local_split
@@ -297,20 +296,6 @@ class MultiSceneDataModule(pl.LightningDataModule):
                         walk_depth=walk_depth,
                         geometric_augmentation=self.geometric_augmentation if mode == 'train' else False
                     ))
-            elif data_source == 'Walk':
-                datasets.append(
-                    WALKDataset(
-                        data_root,
-                        npz_dir,
-                        npz_name,
-                        mode,
-                        max_resize,
-                        self.mgdpt_df,
-                        self.mgdpt_img_pad,
-                        augment_fn,
-                        max_samples,
-                        **dcfg
-                    ))
             else:
                 raise NotImplementedError()
             
@@ -373,23 +358,6 @@ class MultiSceneDataModule(pl.LightningDataModule):
                         augment_fn=augment_fn,
                         coarse_scale=self.coarse_scale,
                     ))(name) for name in npz_names)
-            elif data_source == 'Walk':
-                datasets = Parallel(n_jobs=math.floor(
-                    len(os.sched_getaffinity(0)) * 0.9 /
-                    comm.get_local_size()))(
-                delayed(lambda x: _build_dataset(
-                    WALKDataset,
-                    data_root,
-                    npz_dir,
-                    x,
-                    mode,
-                    max_resize,
-                    self.mgdpt_df,
-                    self.mgdpt_img_pad,
-                    augment_fn,
-                    max_samples,
-                    **dcfg
-                ))(seqname) for seqname in npz_names)
             else:
                 raise ValueError(f'Unknown dataset: {data_source}')
         return ConcatDataset([ds for ds in datasets if len(ds) > 0])
