@@ -10,8 +10,6 @@ _CN = CN()
 _CN.DATASET = CN()
 _CN.TRAINER = CN()
 
-_CN.NJOBS = 1  # x scenes
-
 TRAINVAL_BASE_PATH = "data/WalkDepth2"
 
 _CN.DATASET.TRAIN_DATA_SOURCE = "MegaDepth"
