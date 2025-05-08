@@ -150,10 +150,7 @@ class PL_AdaMatcher(pl.LightningModule):
 
         with self.profiler.profile("Compute losses"):
             # self.loss(batch)
-            self.mask_loss(batch)
-
-        torch.cuda.empty_cache()
-        
+            self.mask_loss(batch)        
 
     def _compute_metrics(self, batch):
         with self.profiler.profile("Copmute metrics"):
@@ -184,8 +181,6 @@ class PL_AdaMatcher(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         # pdb.set_trace()
         self._trainval_inference(batch)
-
-        logger.info(f"m_bids: {batch["m_bids"].shape}, keypoints: {batch["mkpts0_f"].shape}")
 
         # logging
         if (

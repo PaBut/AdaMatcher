@@ -29,7 +29,7 @@ python3 -u ./train.py \
     --log_every_n_steps=1 \
     --flush_logs_every_n_steps=1 \
     --limit_val_batches=1. \
-    --num_sanity_val_steps=10 \
+    --num_sanity_val_steps=200 \
     --benchmark=True \
     --ckpt_path=${ckpt_path} \
     --max_epochs=10 >> ./OUTPUT/AdaMatcher.txt
