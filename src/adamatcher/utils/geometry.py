@@ -35,24 +35,6 @@ def pose2essential_fundamental(K0, K1, T_0to1):
 
 
 @torch.no_grad()
-def morphological_closing(mask):
-    """
-    Performs dilation followed by erosion (closing) on a binary mask.
-    """
-    mask = mask.float().unsqueeze(0).unsqueeze(0)
-
-    kernel = torch.ones((1, 1, 3, 3), dtype=torch.float, device=mask.device)
-
-    # Dilation: Expands valid regions
-    dilated = F.conv2d(mask, kernel, padding=1) > 0  # Threshold to keep binary values
-
-    # Erosion: Shrinks valid regions
-    eroded = F.conv2d(dilated.float(), kernel, padding=1) == 9
-
-    return eroded.squeeze().float()
-
-
-@torch.no_grad()
 def warp_kpts(kpts0, depth0, depth1, T_0to1=None, T_1to0=None, K0=None, K1=None):
     """Warp kpts0 from I0 to I1 with depth, K and Rt
     Args:

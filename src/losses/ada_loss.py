@@ -220,20 +220,6 @@ class AdaMatcherLoss(nn.Module):
         matrix = (torch.einsum('nqc,nsc->nqs', mid_feat0 / c**0.5,
                                mid_feat1 / c**0.5) * 10).softmax(dim=1)
         return self.mask_focal_loss(matrix, gt_matrix, weights)
-    
-    def compute_coarse_zeroshot_loss(self, conf):
-        """
-        Args:
-            conf: [(n', n'), (m', m'), ...]
-
-        Returns:
-        """
-        # conf = torch.clamp(conf, 1e-6, 1-1e-6)
-        conf = [mat.diag().clamp(min=1e-6, max=1-1e-6) for mat in conf]
-        loss_pos = [(- self.focal_loss_alpha * torch.pow(1 - x, self.focal_loss_gamma) * x.log()).mean() for x in conf]
-        loss_pos = sum(loss_pos) / len(loss_pos)
-
-        return loss_pos
 
     def forward(self, data):
         # pdb.set_trace()

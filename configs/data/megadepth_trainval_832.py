@@ -23,5 +23,5 @@ cfg.DATASET.MIN_OVERLAP_SCORE_TEST = 0.0  # for both test and val
 # (with difficulty balanced (further split each scene to 3 sub-scenes))
 cfg.TRAINER.N_SAMPLES_PER_SUBSET = 100
 
-cfg.DATASET.MGDPT_IMG_RESIZE = 720
-cfg.DATASET.GEOMETRIC_AUGMENTATION = True  # whether to use geometric augmentation
+cfg.DATASET.MGDPT_IMG_RESIZE = 832
+cfg.DATASET.GEOMETRIC_AUGMENTATION = False  # whether to use geometric augmentation
